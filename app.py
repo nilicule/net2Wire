@@ -281,6 +281,35 @@ def on_canvas_cleared(data):
                 'cleared_by': request.sid
             }, room=room_id, include_self=False)
 
+@socketio.on('chat_message')
+def on_chat_message(data):
+    if request.sid in active_users:
+        user_data = active_users[request.sid]
+        room_id = user_data.get('room_id')
+        
+        if room_id and room_id in rooms:
+            # Get message content and sanitize (basic XSS prevention)
+            message = data.get('message', '').strip()
+            
+            # Validate message length and content
+            if not message or len(message) > 500:
+                return
+            
+            # Basic sanitization - remove HTML tags and escape special characters
+            import html
+            message = html.escape(message)
+            
+            # Create message data (no persistence - only in memory during broadcast)
+            message_data = {
+                'user_id': user_data['id'],
+                'user_color': user_data['color'],
+                'message': message,
+                'timestamp': time.time()
+            }
+            
+            # Broadcast to all users in the room (including sender for confirmation)
+            emit('chat_message', message_data, room=room_id)
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT not set
     socketio.run(app, debug=True, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)

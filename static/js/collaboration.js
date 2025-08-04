@@ -101,6 +101,11 @@ export function initializeCollaboration(ROOM_ID, IS_NEW_ROOM) {
     socket.on('load_shapes', function(data) {
         loadShapesFromCollaboration(data.shapes);
     });
+
+    // Chat events
+    socket.on('chat_message', function(data) {
+        displayChatMessage(data);
+    });
 }
 
 // Mouse tracking
@@ -545,6 +550,168 @@ export function emitShapeDeleted(shape) {
 export function emitCanvasClear() {
     if (socket && socket.connected) {
         socket.emit('canvas_cleared', {});
+    }
+}
+
+// Chat functionality
+let chatVisible = false;
+let lastMessageTime = 0;
+const MESSAGE_THROTTLE = 1000; // 1 second between messages
+
+export function toggleChat() {
+    const chatContainer = document.getElementById('chat-container');
+    if (chatContainer) {
+        chatVisible = !chatVisible;
+        chatContainer.style.display = chatVisible ? 'flex' : 'none';
+        
+        if (chatVisible) {
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.focus();
+            }
+        }
+    }
+}
+
+export function sendChatMessage() {
+    const chatInput = document.getElementById('chat-input');
+    if (!chatInput || !socket || !socket.connected) return;
+    
+    const message = chatInput.value.trim();
+    if (!message || message.length > 500) return;
+    
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastMessageTime < MESSAGE_THROTTLE) {
+        return;
+    }
+    lastMessageTime = now;
+    
+    // Send message
+    socket.emit('chat_message', { message: message });
+    chatInput.value = '';
+}
+
+function displayChatMessage(data) {
+    const chatMessages = document.getElementById('chat-messages');
+    if (!chatMessages) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = 'chat-message';
+    
+    const timestamp = new Date(data.timestamp * 1000);
+    const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messageElement.innerHTML = `
+        <div class="chat-message-user" style="color: ${data.user_color};">
+            ${data.user_id}
+        </div>
+        <div class="chat-message-content">${data.message}</div>
+        <div class="chat-message-time">${timeString}</div>
+    `;
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Show notification if chat is not visible
+    if (!chatVisible) {
+        showChatNotification();
+        showMessagePopup(data);
+    }
+}
+
+function showChatNotification() {
+    const chatBtn = document.getElementById('chat-btn');
+    if (chatBtn) {
+        chatBtn.classList.add('has-notification');
+        setTimeout(() => {
+            chatBtn.classList.remove('has-notification');
+        }, 5000);
+    }
+}
+
+function showMessagePopup(data) {
+    // Remove any existing popup
+    const existingPopup = document.getElementById('message-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+    
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.id = 'message-popup';
+    popup.className = 'message-popup';
+    
+    // Truncate long messages for preview
+    const preview = data.message.length > 80 ? data.message.substring(0, 80) + '...' : data.message;
+    
+    popup.innerHTML = `
+        <div class="message-popup-header">
+            <span class="message-popup-user" style="color: ${data.user_color};">💬 ${data.user_id}</span>
+            <button class="message-popup-close">×</button>
+        </div>
+        <div class="message-popup-content">${preview}</div>
+        <div class="message-popup-action">Click to open chat</div>
+    `;
+    
+    // Add click handlers
+    popup.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('message-popup-close')) {
+            toggleChat();
+            popup.remove();
+        }
+    });
+    
+    popup.querySelector('.message-popup-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.remove();
+    });
+    
+    // Add to page
+    document.body.appendChild(popup);
+    
+    // Animate in
+    setTimeout(() => {
+        popup.classList.add('show');
+    }, 10);
+    
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+        if (popup && popup.parentNode) {
+            popup.classList.remove('show');
+            setTimeout(() => {
+                if (popup && popup.parentNode) {
+                    popup.remove();
+                }
+            }, 300);
+        }
+    }, 8000);
+}
+
+export function initializeChatHandlers() {
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+    }
+    
+    const sendBtn = document.getElementById('chat-send-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendChatMessage);
+    }
+    
+    const chatBtn = document.getElementById('chat-btn');
+    if (chatBtn) {
+        chatBtn.addEventListener('click', toggleChat);
+    }
+    
+    const chatClose = document.getElementById('chat-close');
+    if (chatClose) {
+        chatClose.addEventListener('click', toggleChat);
     }
 }
 
