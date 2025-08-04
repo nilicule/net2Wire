@@ -1,4 +1,4 @@
-# WireframeGen
+# NET2WIRE
 
 A collaborative wireframing tool built with Flask and real-time chat functionality.
 
