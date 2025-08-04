@@ -342,6 +342,17 @@
         .element-search {
             padding: 15px;
             border-bottom: 1px solid #444;
+            position: relative;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 27px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            pointer-events: none;
+            font-size: 14px;
         }
         
         .search-input {
@@ -349,7 +360,7 @@
             background: #3a3a3a;
             border: 1px solid #555;
             border-radius: 4px;
-            padding: 8px 12px;
+            padding: 8px 12px 8px 35px;
             color: #ccc;
             font-size: 14px;
             outline: none;
@@ -832,7 +843,8 @@
             picker.className = 'element-picker';
             picker.innerHTML = `
                 <div class="element-search">
-                    <input type="text" class="search-input" placeholder="🔍 Search elements and sections..." />
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Search elements and sections..." />
                 </div>
                 <div class="element-list">
                     <div class="element-category">Elements</div>
@@ -1160,7 +1172,8 @@
             // Create the expanded picker content
             const expandedContent = `
                 <div class="element-search" style="opacity: 0; transition: opacity 0.3s ease 0.2s; padding: 15px; padding-bottom: 10px;">
-                    <input type="text" class="search-input" placeholder="🔍 Search elements and sections..." />
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Search elements and sections..." />
                 </div>
                 <div class="element-list" style="opacity: 0; transition: opacity 0.3s ease 0.2s; overflow-y: auto; height: calc(100% - 70px); padding: 0 10px 10px 10px;">
                     <div class="element-category">Elements</div>
