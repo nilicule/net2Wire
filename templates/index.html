@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NET2WIRE</title>
     <!-- Modular CSS files -->
-    <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="stylesheet" href="/static/css/layout.css">
-    <link rel="stylesheet" href="/static/css/canvas.css">
-    <link rel="stylesheet" href="/static/css/shapes.css">
-    <link rel="stylesheet" href="/static/css/ui.css">
-    <link rel="stylesheet" href="/static/css/collaboration.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/base.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/layout.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/canvas.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/shapes.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/ui.css">
+    <link rel="stylesheet" href="{{ base_path }}/static/css/collaboration.css">
 </head>
 <body>
     <div class="header">
@@ -85,9 +85,9 @@
     
     <!-- Import modular JavaScript files -->
     <script type="module">
-        import { initializeCanvas } from '/static/js/canvas.js';
-        import { initializeCollaboration, startMouseTracking, initializeChatHandlers } from '/static/js/collaboration.js';
-        import { initializeUI } from '/static/js/ui.js';
+        import { initializeCanvas } from '{{ base_path }}/static/js/canvas.js';
+        import { initializeCollaboration, startMouseTracking, initializeChatHandlers } from '{{ base_path }}/static/js/collaboration.js';
+        import { initializeUI } from '{{ base_path }}/static/js/ui.js';
         
         // Initialize all modules when page loads
         document.addEventListener('DOMContentLoaded', function() {
