@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NET2WIRE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #333;
+            color: white;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            font-weight: 600;
+        }
+        
+        .save-btn {
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .menu-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 120px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .menu-dropdown.show {
+            display: block;
+        }
+        
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .menu-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .menu-item:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .menu-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .toolbar {
+            background: #2c2c2c;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+            border-radius: 20px;
+            margin: 20px;
+            width: fit-content;
+        }
+        
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: #ccc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            user-select: none;
+        }
+        
+        .tool-btn:hover {
+            background: #444;
+            color: white;
+        }
+        
+        .tool-btn.active {
+            background: #555;
+            color: white;
+        }
+        
+        .canvas-area {
+            width: 1024px;
+            margin: 40px auto 20px auto;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .browser-bar {
+            background: #e5e5e5;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .browser-dots {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .dot.red { background: #ff5f57; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #28ca42; }
+        
+        .canvas {
+            background: white;
+            height: calc(100vh - 140px);
+            width: 100%;
+            position: relative;
+            overflow: visible;
+        }
+        
+        .shape {
+            position: absolute !important;
+            cursor: move;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        
+        .box-shape {
+            border: 2px solid #999;
+            background: #f9f9f9;
+        }
+        
+        .image-shape {
+            border: 2px dashed #999;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .image-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: #999;
+        }
+        
+        .image-icon {
+            font-size: 24px;
+            opacity: 0.7;
+        }
+        
+        .text-shape {
+            border: 1px solid #ddd;
+            background: white;
+            padding: 8px;
+            color: #333;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            cursor: move;
+            overflow: hidden;
+        }
+        
+        .text-input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            padding: 0;
+            margin: 0;
+            pointer-events: none;
+            cursor: inherit;
+        }
+        
+        .text-input:focus {
+            pointer-events: auto;
+            cursor: text;
+        }
+        
+        .icon-shape {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .position-info {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+        
+        .drag-preview {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+        }
+        
+        .type-selector-popup {
+            position: absolute;
+            background: #2c2c2c;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 1001;
+            padding: 8px 15px;
+        }
+        
+        .type-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .type-option {
+            background: transparent;
+            border: none;
+            color: #ccc;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            user-select: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        .type-option:hover {
+            background: #444;
+            color: white;
+        }
+        
+        .hamburger-option {
+            border-left: 1px solid #555;
+            padding-left: 10px;
+            margin-left: 5px;
+        }
+        
+        .element-picker {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            height: 500px;
+            background: #2c2c2c;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 1002;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .element-search {
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .search-input {
+            width: 100%;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: #ccc;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: #888;
+        }
+        
+        .search-input:focus {
+            border-color: #007bff;
+            background: #404040;
+        }
+        
+        .element-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        
+        .element-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 15px;
+            color: #ccc;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            border-radius: 0;
+            transition: background 0.2s;
+        }
+        
+        .element-item:hover {
+            background: #3a3a3a;
+            color: white;
+        }
+        
+        .element-item.hidden {
+            display: none;
+        }
+        
+        .element-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .element-name {
+            flex: 1;
+        }
+        
+        .element-category {
+            padding: 12px 15px 8px 15px;
+            color: #999;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #444;
+            margin-bottom: 5px;
+        }
+        
+        .shape.selected {
+            border-color: #007bff !important;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+        }
+        
+        .resize-handle {
+            position: absolute;
+            background: #007bff;
+            border: 1px solid white;
+            width: 8px;
+            height: 8px;
+            z-index: 1003;
+            pointer-events: auto;
+        }
+        
+        .resize-handle.nw {
+            top: -4px;
+            left: -4px;
+            cursor: nw-resize;
+        }
+        
+        .resize-handle.n {
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: n-resize;
+        }
+        
+        .resize-handle.ne {
+            top: -4px;
+            right: -4px;
+            cursor: ne-resize;
+        }
+        
+        .resize-handle.e {
+            top: 50%;
+            right: -4px;
+            transform: translateY(-50%);
+            cursor: e-resize;
+        }
+        
+        .resize-handle.se {
+            bottom: -4px;
+            right: -4px;
+            cursor: se-resize;
+        }
+        
+        .resize-handle.s {
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: s-resize;
+        }
+        
+        .resize-handle.sw {
+            bottom: -4px;
+            left: -4px;
+            cursor: sw-resize;
+        }
+        
+        .resize-handle.w {
+            top: 50%;
+            left: -4px;
+            transform: translateY(-50%);
+            cursor: w-resize;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <span class="logo">NET2WIRE</span>
+        </div>
+        <div class="header-right" style="position: relative;">
+            <button class="menu-btn" id="menu-btn">☰</button>
+            <div class="menu-dropdown" id="menu-dropdown">
+                <button class="menu-item" onclick="saveWireframe()">💾 Save</button>
+                <button class="menu-item" onclick="document.getElementById('load-input').click()">📁 Load</button>
+                <button class="menu-item" onclick="clearCanvas()">🗑️ Clear</button>
+            </div>
+            <input type="file" id="load-input" class="file-input" accept=".json" onchange="loadWireframe(event)">
+        </div>
+    </div>
+    
+    
+    <div class="canvas-area">
+        <div class="browser-bar">
+            <div class="browser-dots">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+        </div>
+        <div class="canvas" id="canvas"></div>
+        <div class="position-info" id="position-info">X: 0 px &nbsp;&nbsp; Y: 0 px &nbsp;&nbsp; W: 0 px &nbsp;&nbsp; H: 0 px</div>
+    </div>
+
+    <script>
+        let shapeCounter = 0;
+        let selectedShape = null;
+        let isDrawing = false;
+        let drawingShape = null;
+        let startX = 0;
+        let startY = 0;
+        let dragOffset = { x: 0, y: 0 };
+        let isResizing = false;
+        let resizeHandle = null;
+        let originalBounds = null;
+
+        const canvas = document.getElementById('canvas');
+        
+        // Smart section positioning and sizing
+        function getSectionDefaults(type) {
+            const canvasWidth = 1024;
+            const canvasHeight = canvas.offsetHeight || 600;
+            
+            const sectionTypes = {
+                'navbar': {
+                    x: 0,
+                    y: 0,
+                    width: canvasWidth,
+                    height: 60
+                },
+                'header': {
+                    x: 0,
+                    y: 60,
+                    width: canvasWidth,
+                    height: 120
+                },
+                'footer': {
+                    x: 0,
+                    y: Math.max(400, canvasHeight - 80),
+                    width: canvasWidth,
+                    height: 80
+                },
+                'sidebar': {
+                    x: 0,
+                    y: 180,
+                    width: 250,
+                    height: Math.max(300, canvasHeight - 260)
+                },
+                'hero-section': {
+                    x: 0,
+                    y: 60,
+                    width: canvasWidth,
+                    height: 300
+                },
+                'content-section': {
+                    x: 250,
+                    y: 180,
+                    width: canvasWidth - 250,
+                    height: 200
+                },
+                'form': {
+                    x: Math.floor(canvasWidth * 0.25),
+                    y: 200,
+                    width: Math.floor(canvasWidth * 0.5),
+                    height: 300
+                },
+                'modal': {
+                    x: Math.floor(canvasWidth * 0.2),
+                    y: 150,
+                    width: Math.floor(canvasWidth * 0.6),
+                    height: 400
+                },
+                'card': {
+                    x: 50,
+                    y: 200,
+                    width: 300,
+                    height: 200
+                },
+                'table': {
+                    x: 50,
+                    y: 200,
+                    width: canvasWidth - 100,
+                    height: 250
+                }
+            };
+            
+            return sectionTypes[type] || null;
+        }
+
+        // Canvas drawing functionality
+        canvas.addEventListener('mousedown', function(event) {
+            // Only start drawing if clicking on empty canvas (not on existing shapes)
+            if (event.target === canvas) {
+                startDrawing(event);
+            }
+        });
+
+        // Track mouse position over canvas
+        canvas.addEventListener('mousemove', function(event) {
+            if (!isDrawing) {
+                const canvasRect = canvas.getBoundingClientRect();
+                const x = Math.round(event.clientX - canvasRect.left);
+                const y = Math.round(event.clientY - canvasRect.top);
+                
+                if (selectedShape) {
+                    const w = selectedShape.offsetWidth;
+                    const h = selectedShape.offsetHeight;
+                    document.getElementById('position-info').textContent = `X: ${parseInt(selectedShape.style.left) || 0} px   Y: ${parseInt(selectedShape.style.top) || 0} px   W: ${w} px   H: ${h} px   Mouse: ${x}, ${y}`;
+                } else {
+                    document.getElementById('position-info').textContent = `X: ${x} px   Y: ${y} px   W: 0 px   H: 0 px`;
+                }
+            }
+        });
+
+        // Reset position info when mouse leaves canvas
+        canvas.addEventListener('mouseleave', function() {
+            if (!isDrawing && !selectedShape) {
+                document.getElementById('position-info').textContent = 'X: 0 px   Y: 0 px   W: 0 px   H: 0 px';
+            }
+        });
+
+        function startDrawing(event) {
+            isDrawing = true;
+            const canvasRect = canvas.getBoundingClientRect();
+            startX = event.clientX - canvasRect.left;
+            startY = event.clientY - canvasRect.top;
+
+            // Create a temporary drawing shape
+            drawingShape = document.createElement('div');
+            drawingShape.className = 'shape drawing-shape';
+            drawingShape.style.left = startX + 'px';
+            drawingShape.style.top = startY + 'px';
+            drawingShape.style.width = '0px';
+            drawingShape.style.height = '0px';
+            drawingShape.style.border = '2px dashed #007bff';
+            drawingShape.style.background = 'rgba(0, 123, 255, 0.1)';
+            drawingShape.style.position = 'absolute';
+            
+            canvas.appendChild(drawingShape);
+
+            document.addEventListener('mousemove', drawShape);
+            document.addEventListener('mouseup', finishDrawing);
+        }
+
+        function drawShape(event) {
+            if (!isDrawing || !drawingShape) return;
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const currentX = event.clientX - canvasRect.left;
+            const currentY = event.clientY - canvasRect.top;
+
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+
+            drawingShape.style.left = left + 'px';
+            drawingShape.style.top = top + 'px';
+            drawingShape.style.width = width + 'px';
+            drawingShape.style.height = height + 'px';
+
+            // Update position info during drawing
+            document.getElementById('position-info').textContent = `X: ${Math.round(left)} px   Y: ${Math.round(top)} px   W: ${Math.round(width)} px   H: ${Math.round(height)} px`;
+        }
+
+        function finishDrawing(event) {
+            if (!isDrawing || !drawingShape) return;
+
+            document.removeEventListener('mousemove', drawShape);
+            document.removeEventListener('mouseup', finishDrawing);
+
+            const width = parseInt(drawingShape.style.width);
+            const height = parseInt(drawingShape.style.height);
+
+            // Only show type selector if shape has meaningful size
+            if (width > 10 && height > 10) {
+                const left = parseInt(drawingShape.style.left);
+                const top = parseInt(drawingShape.style.top);
+                
+                showShapeTypeSelector(left, top, width, height);
+            } else {
+                // Remove shape if too small
+                drawingShape.remove();
+            }
+
+            isDrawing = false;
+            drawingShape = null;
+        }
+
+        // Define comprehensive list of page elements organized by category
+        const pageElements = {
+            elements: [
+                { type: 'rectangle', name: 'Box', icon: '⬛' },
+                { type: 'block-text', name: 'Text', icon: '📝' },
+                { type: 'image', name: 'Image', icon: '🖼️' },
+                { type: 'icon', name: 'Icon', icon: '⭐' },
+                { type: 'button', name: 'Button', icon: '🔘' },
+                { type: 'text-input', name: 'Text Input', icon: '📝' },
+                { type: 'block-text', name: 'Block Text', icon: '📄' },
+                { type: 'block-list', name: 'Block List', icon: '📋' },
+                { type: 'block-headline', name: 'Block Headline', icon: '📰' },
+                { type: 'dropdown', name: 'Dropdown', icon: '📋' },
+                { type: 'line-horizontal', name: 'Line (Horizontal)', icon: '➖' },
+                { type: 'line-vertical', name: 'Line (Vertical)', icon: '|' },
+                { type: 'checkbox', name: 'Checkbox', icon: '☑️' },
+                { type: 'radio', name: 'Radio Button', icon: '🔘' },
+                { type: 'slider', name: 'Slider', icon: '🎚️' },
+                { type: 'progress', name: 'Progress Bar', icon: '📊' },
+                { type: 'scrollbar-horizontal', name: 'Scrollbar (Horizontal)', icon: '↔️' },
+                { type: 'scrollbar-vertical', name: 'Scrollbar (Vertical)', icon: '↕️' }
+            ],
+            sections: [
+                { type: 'navbar', name: 'Navbar', icon: '🧭' },
+                { type: 'header', name: 'Header', icon: '🎯' },
+                { type: 'footer', name: 'Footer', icon: '⬇️' },
+                { type: 'sidebar', name: 'Sidebar', icon: '📑' },
+                { type: 'form', name: 'Form', icon: '📝' },
+                { type: 'card', name: 'Card', icon: '🃏' },
+                { type: 'modal', name: 'Modal', icon: '🖼️' },
+                { type: 'table', name: 'Table', icon: '📊' },
+                { type: 'tab', name: 'Tab', icon: '📂' },
+                { type: 'accordion', name: 'Accordion', icon: '📁' },
+                { type: 'breadcrumb', name: 'Breadcrumb', icon: '🍞' },
+                { type: 'pagination', name: 'Pagination', icon: '📄' },
+                { type: 'hero-section', name: 'Hero Section', icon: '🎭' },
+                { type: 'content-section', name: 'Content Section', icon: '📰' },
+                { type: 'gallery', name: 'Gallery', icon: '🖼️' },
+                { type: 'testimonial', name: 'Testimonial', icon: '💬' }
+            ]
+        };
+
+        function handleShapeDoubleClick(shape, event) {
+            // Get shape position and dimensions
+            const rect = shape.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = rect.left - canvasRect.left;
+            const y = rect.top - canvasRect.top;
+            const width = rect.width;
+            const height = rect.height;
+            
+            // Show type selector for changing the shape type
+            showShapeTypeChangeSelector(shape, x, y, width, height);
+        }
+
+        function showShapeTypeChangeSelector(shape, x, y, width, height) {
+            // Create simple type selector popup (same as creation, but for changing)
+            const selector = document.createElement('div');
+            selector.className = 'type-selector-popup';
+            selector.innerHTML = `
+                <div class="type-options">
+                    <button class="type-option" data-type="image">
+                        <span>🖼️</span> Image
+                    </button>
+                    <button class="type-option" data-type="rectangle">
+                        <span>⬛</span> Box
+                    </button>
+                    <button class="type-option" data-type="block-text">
+                        <span>📝</span> Text
+                    </button>
+                    <button class="type-option hamburger-option" onclick="showFullElementChangePicker('${shape.id}', ${x}, ${y}, ${width}, ${height}); this.closest('.type-selector-popup').remove();">
+                        <span>☰</span>
+                    </button>
+                </div>
+            `;
+            
+            // Position the selector above the shape
+            selector.style.left = (x + width/2) + 'px';
+            selector.style.top = (y - 50) + 'px';
+            selector.style.transform = 'translateX(-50%)';
+            
+            // Make sure it doesn't go off screen
+            canvas.appendChild(selector);
+            
+            // Adjust position if it goes off edges
+            const selectorRect = selector.getBoundingClientRect();
+            const canvasLeft = canvas.getBoundingClientRect().left;
+            const canvasRight = canvas.getBoundingClientRect().right;
+            
+            if (selectorRect.left < canvasLeft) {
+                selector.style.left = '10px';
+                selector.style.transform = 'none';
+            } else if (selectorRect.right > canvasRight) {
+                selector.style.left = (canvas.offsetWidth - selector.offsetWidth - 10) + 'px';
+                selector.style.transform = 'none';
+            }
+            
+            // If it goes above the canvas, put it below the shape instead
+            if (y - 50 < 0) {
+                selector.style.top = (y + height + 10) + 'px';
+            }
+            
+            // Handle type selection
+            selector.querySelectorAll('.type-option[data-type]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const newType = this.dataset.type;
+                    selector.remove();
+                    changeShapeType(shape, newType);
+                });
+            });
+            
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closeSelector(e) {
+                    if (!selector.contains(e.target)) {
+                        selector.remove();
+                        document.removeEventListener('click', closeSelector);
+                    }
+                });
+            }, 100);
+        }
+
+        function showFullElementChangePicker(shapeId, x, y, width, height) {
+            const shape = document.getElementById(shapeId);
+            if (!shape) return;
+            
+            // Create comprehensive element picker
+            const picker = document.createElement('div');
+            picker.className = 'element-picker';
+            picker.innerHTML = `
+                <div class="element-search">
+                    <input type="text" class="search-input" placeholder="🔍 Search elements and sections..." />
+                </div>
+                <div class="element-list">
+                    <div class="element-category">Elements</div>
+                    ${pageElements.elements.map(element => `
+                        <button class="element-item" data-type="${element.type}" data-category="elements">
+                            <span class="element-icon">${element.icon}</span>
+                            <span class="element-name">${element.name}</span>
+                        </button>
+                    `).join('')}
+                    
+                    <div class="element-category">Sections</div>
+                    ${pageElements.sections.map(element => `
+                        <button class="element-item" data-type="${element.type}" data-category="sections">
+                            <span class="element-icon">${element.icon}</span>
+                            <span class="element-name">${element.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(picker);
+            
+            // Get search input and element list
+            const searchInput = picker.querySelector('.search-input');
+            const elementItems = picker.querySelectorAll('.element-item');
+            
+            // Implement search functionality with category handling
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const categories = picker.querySelectorAll('.element-category');
+                
+                // Handle search filtering
+                if (searchTerm === '') {
+                    // Show all items and categories
+                    elementItems.forEach(item => item.classList.remove('hidden'));
+                    categories.forEach(cat => cat.style.display = 'block');
+                } else {
+                    // Filter items
+                    let hasElementsVisible = false;
+                    let hasSectionsVisible = false;
+                    
+                    elementItems.forEach(item => {
+                        const elementName = item.querySelector('.element-name').textContent.toLowerCase();
+                        const category = item.dataset.category;
+                        
+                        if (elementName.includes(searchTerm)) {
+                            item.classList.remove('hidden');
+                            if (category === 'elements') hasElementsVisible = true;
+                            if (category === 'sections') hasSectionsVisible = true;
+                        } else {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Show/hide category headers based on whether they have visible items
+                    categories.forEach(cat => {
+                        if (cat.textContent === 'Elements') {
+                            cat.style.display = hasElementsVisible ? 'block' : 'none';
+                        } else if (cat.textContent === 'Sections') {
+                            cat.style.display = hasSectionsVisible ? 'block' : 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Focus search input
+            setTimeout(() => searchInput.focus(), 100);
+            
+            // Handle element selection
+            elementItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const newType = this.dataset.type;
+                    picker.remove();
+                    changeShapeType(shape, newType);
+                });
+            });
+            
+            // Handle keyboard navigation
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    picker.remove();
+                }
+            });
+            
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closePicker(e) {
+                    if (!picker.contains(e.target)) {
+                        picker.remove();
+                        document.removeEventListener('click', closePicker);
+                    }
+                });
+            }, 100);
+        }
+
+        function changeShapeType(shape, newType) {
+            // Store current dimensions
+            const currentWidth = shape.offsetWidth;
+            const currentHeight = shape.offsetHeight;
+            const currentX = parseInt(shape.style.left) || 0;
+            const currentY = parseInt(shape.style.top) || 0;
+            
+            // Update the shape's data-type attribute
+            shape.setAttribute('data-type', newType);
+            
+            // Clear existing content and classes
+            shape.innerHTML = '';
+            shape.className = 'shape';
+            shape.style.position = 'absolute';
+            shape.style.left = currentX + 'px';
+            shape.style.top = currentY + 'px';
+            shape.style.width = currentWidth + 'px';
+            shape.style.height = currentHeight + 'px';
+            
+            // Apply new type styling (reuse the logic from createShape)
+            switch(newType) {
+                case 'image':
+                    shape.classList.add('image-shape');
+                    shape.innerHTML = `
+                        <div class="image-placeholder">
+                            <div class="image-icon">🖼️</div>
+                            <div style="font-size: 10px;">Image</div>
+                        </div>
+                    `;
+                    break;
+                case 'icon':
+                    shape.classList.add('box-shape');
+                    shape.classList.add('icon-shape');
+                    shape.innerHTML = '⭐';
+                    break;
+                case 'button':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#007bff';
+                    shape.style.color = 'white';
+                    shape.style.border = 'none';
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + currentHeight + 'px; font-size: 14px;">Button</div>';
+                    break;
+                case 'text-input':
+                    shape.classList.add('text-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.style.borderRadius = '4px';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'text-input';
+                    input.style.border = 'none';
+                    input.style.background = 'transparent';
+                    input.style.width = '100%';
+                    input.style.height = '100%';
+                    input.style.padding = '8px';
+                    input.placeholder = 'Enter text...';
+                    shape.appendChild(input);
+                    break;
+                case 'block-text':
+                    shape.classList.add('text-shape');
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'text-input';
+                    textarea.value = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...';
+                    textarea.style.fontSize = '14px';
+                    textarea.style.lineHeight = '1.5';
+                    textarea.addEventListener('blur', function() {
+                        if (this.value.trim() === '') {
+                            this.value = 'Lorem ipsum dolor sit amet...';
+                        }
+                    });
+                    textarea.addEventListener('input', function() {
+                        this.style.height = 'auto';
+                        this.style.height = Math.min(this.scrollHeight, parseInt(shape.style.height) - 16) + 'px';
+                    });
+                    shape.appendChild(textarea);
+                    break;
+                case 'block-headline':
+                    shape.classList.add('text-shape');
+                    shape.innerHTML = '<div style="font-size: 24px; font-weight: bold; line-height: ' + currentHeight + 'px; text-align: center;">Headline</div>';
+                    break;
+                case 'dropdown':
+                    shape.classList.add('box-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px;"><span>Select option</span><span>▼</span></div>';
+                    break;
+                case 'checkbox':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; display: inline-block;"></span><span>Checkbox</span></div>';
+                    break;
+                case 'radio':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; border-radius: 50%; display: inline-block;"></span><span>Radio Button</span></div>';
+                    break;
+                default:
+                    // For all other types, show a generic box with the type name
+                    shape.classList.add('box-shape');
+                    const allElements = [...pageElements.elements, ...pageElements.sections];
+                    const displayName = allElements.find(el => el.type === newType)?.name || newType;
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + currentHeight + 'px; color: #999; font-size: 12px;">' + displayName + '</div>';
+                    break;
+            }
+            
+            // Re-add event listeners (they were cleared when innerHTML was reset)
+            shape.addEventListener('mousedown', startShapeDrag);
+            shape.addEventListener('click', selectShape);
+            shape.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                handleShapeDoubleClick(shape, e);
+            });
+            
+            // Special handling for text shapes
+            if (newType === 'text-input' || newType === 'block-text') {
+                const textElement = shape.querySelector('.text-input, input, textarea');
+                if (textElement) {
+                    textElement.addEventListener('mousedown', function(e) {
+                        // If not focused, allow dragging by preventing default and calling shape drag
+                        if (document.activeElement !== textElement) {
+                            e.preventDefault();
+                            startShapeDrag(e);
+                        }
+                    });
+                }
+                
+                shape.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    const textInput = shape.querySelector('.text-input, input, textarea');
+                    if (textInput) {
+                        textInput.style.pointerEvents = 'auto';
+                        textInput.focus();
+                        if (textInput.select) textInput.select();
+                    } else {
+                        handleShapeDoubleClick(shape, e);
+                    }
+                });
+            }
+        }
+
+        function showShapeTypeSelector(x, y, width, height) {
+            // Create simple type selector popup
+            const selector = document.createElement('div');
+            selector.className = 'type-selector-popup';
+            selector.innerHTML = `
+                <div class="type-options">
+                    <button class="type-option" data-type="image">
+                        <span>🖼️</span> Image
+                    </button>
+                    <button class="type-option" data-type="rectangle">
+                        <span>⬛</span> Box
+                    </button>
+                    <button class="type-option" data-type="block-text">
+                        <span>📝</span> Text
+                    </button>
+                    <button class="type-option hamburger-option" onclick="showFullElementPicker(${x}, ${y}, ${width}, ${height}); this.closest('.type-selector-popup').remove();">
+                        <span>☰</span>
+                    </button>
+                </div>
+            `;
+            
+            // Position the selector above the drawn shape
+            const canvasRect = canvas.getBoundingClientRect();
+            selector.style.left = (x + width/2) + 'px';
+            selector.style.top = (y - 50) + 'px';
+            selector.style.transform = 'translateX(-50%)';
+            
+            // Make sure it doesn't go off screen
+            canvas.appendChild(selector);
+            
+            // Adjust position if it goes off the left or right edge
+            const selectorRect = selector.getBoundingClientRect();
+            const canvasLeft = canvasRect.left;
+            const canvasRight = canvasRect.right;
+            
+            if (selectorRect.left < canvasLeft) {
+                selector.style.left = '10px';
+                selector.style.transform = 'none';
+            } else if (selectorRect.right > canvasRight) {
+                selector.style.left = (canvas.offsetWidth - selector.offsetWidth - 10) + 'px';
+                selector.style.transform = 'none';
+            }
+            
+            // If it goes above the canvas, put it below the shape instead
+            if (y - 50 < 0) {
+                selector.style.top = (y + height + 10) + 'px';
+            }
+            
+            // Handle type selection
+            selector.querySelectorAll('.type-option[data-type]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const selectedType = this.dataset.type;
+                    selector.remove();
+                    createShape(selectedType, x, y, width, height);
+                });
+            });
+            
+            // Close on outside click
+            let ignoreFirstClick = true;
+            function closeSelector(e) {
+                if (ignoreFirstClick) {
+                    ignoreFirstClick = false;
+                    return;
+                }
+                
+                if (!selector.contains(e.target)) {
+                    // Prevent the canvas from starting a new shape
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                    // Remove the drawing shape if cancelled
+                    const drawingShapes = document.querySelectorAll('.drawing-shape');
+                    drawingShapes.forEach(shape => shape.remove());
+                    selector.remove();
+                    document.removeEventListener('click', closeSelector, true);
+                    document.removeEventListener('mousedown', closeSelector, true);
+                    updatePositionInfo();
+                    
+                    return false;
+                }
+            }
+            
+            // Add the event listener for both click and mousedown to catch canvas events
+            document.addEventListener('click', closeSelector, true);
+            document.addEventListener('mousedown', closeSelector, true);
+        }
+
+        function showFullElementPicker(x, y, width, height) {
+            // Create comprehensive element picker
+            const picker = document.createElement('div');
+            picker.className = 'element-picker';
+            picker.innerHTML = `
+                <div class="element-search">
+                    <input type="text" class="search-input" placeholder="🔍 Search elements and sections..." />
+                </div>
+                <div class="element-list" id="element-list">
+                    <div class="element-category">Elements</div>
+                    ${pageElements.elements.map(element => `
+                        <button class="element-item" data-type="${element.type}" data-category="elements">
+                            <span class="element-icon">${element.icon}</span>
+                            <span class="element-name">${element.name}</span>
+                        </button>
+                    `).join('')}
+                    
+                    <div class="element-category">Sections</div>
+                    ${pageElements.sections.map(element => `
+                        <button class="element-item" data-type="${element.type}" data-category="sections">
+                            <span class="element-icon">${element.icon}</span>
+                            <span class="element-name">${element.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(picker);
+            
+            // Get search input and element list
+            const searchInput = picker.querySelector('.search-input');
+            const elementItems = picker.querySelectorAll('.element-item');
+            
+            // Implement search functionality with category handling
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const categories = picker.querySelectorAll('.element-category');
+                
+                // Handle search filtering
+                if (searchTerm === '') {
+                    // Show all items and categories
+                    elementItems.forEach(item => item.classList.remove('hidden'));
+                    categories.forEach(cat => cat.style.display = 'block');
+                } else {
+                    // Filter items
+                    let hasElementsVisible = false;
+                    let hasSectionsVisible = false;
+                    
+                    elementItems.forEach(item => {
+                        const elementName = item.querySelector('.element-name').textContent.toLowerCase();
+                        const category = item.dataset.category;
+                        
+                        if (elementName.includes(searchTerm)) {
+                            item.classList.remove('hidden');
+                            if (category === 'elements') hasElementsVisible = true;
+                            if (category === 'sections') hasSectionsVisible = true;
+                        } else {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Show/hide category headers based on whether they have visible items
+                    categories.forEach(cat => {
+                        if (cat.textContent === 'Elements') {
+                            cat.style.display = hasElementsVisible ? 'block' : 'none';
+                        } else if (cat.textContent === 'Sections') {
+                            cat.style.display = hasSectionsVisible ? 'block' : 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Focus search input
+            setTimeout(() => searchInput.focus(), 100);
+            
+            // Handle element selection
+            elementItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const selectedType = this.dataset.type;
+                    picker.remove();
+                    createShape(selectedType, x, y, width, height);
+                });
+            });
+            
+            // Handle keyboard navigation
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    picker.remove();
+                    // Remove the drawing shape if cancelled
+                    const drawingShapes = document.querySelectorAll('.drawing-shape');
+                    drawingShapes.forEach(shape => shape.remove());
+                    updatePositionInfo();
+                }
+            });
+            
+            // Close on outside click
+            let ignoreFirstClick = true;
+            function closePicker(e) {
+                if (ignoreFirstClick) {
+                    ignoreFirstClick = false;
+                    return;
+                }
+                
+                if (!picker.contains(e.target)) {
+                    // Prevent the canvas from starting a new shape
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                    // Remove the drawing shape if cancelled
+                    const drawingShapes = document.querySelectorAll('.drawing-shape');
+                    drawingShapes.forEach(shape => shape.remove());
+                    picker.remove();
+                    document.removeEventListener('click', closePicker, true);
+                    document.removeEventListener('mousedown', closePicker, true);
+                    updatePositionInfo();
+                    
+                    return false;
+                }
+            }
+            
+            // Add the event listener for both click and mousedown to catch canvas events
+            document.addEventListener('click', closePicker, true);
+            document.addEventListener('mousedown', closePicker, true);
+        }
+
+        function createShape(type, x, y, width, height) {
+            console.log(`Creating shape #${shapeCounter + 1} at:`, x, y, 'size:', width, height);
+            
+            // Remove any drawing shapes first
+            const drawingShapes = document.querySelectorAll('.drawing-shape');
+            console.log('Removing drawing shapes:', drawingShapes.length);
+            drawingShapes.forEach(shape => shape.remove());
+
+            const shape = document.createElement('div');
+            shape.className = 'shape';
+            shape.id = `shape-${shapeCounter++}`;
+            shape.setAttribute('data-type', type);
+            
+            // Check if this is a section type and apply smart positioning/sizing
+            const sectionDefaults = getSectionDefaults(type);
+            if (sectionDefaults) {
+                x = sectionDefaults.x;
+                y = sectionDefaults.y;
+                width = sectionDefaults.width;
+                height = sectionDefaults.height;
+            }
+            
+            // Force absolute positioning and set position/size
+            shape.style.position = 'absolute';
+            shape.style.left = x + 'px';
+            shape.style.top = y + 'px';
+            shape.style.width = width + 'px';
+            shape.style.height = height + 'px';
+            
+            console.log('Shape element created with styles:', {
+                left: shape.style.left,
+                top: shape.style.top,
+                width: shape.style.width,
+                height: shape.style.height
+            });
+            
+            // Set shape properties based on type
+            switch(type) {
+                case 'image':
+                    shape.classList.add('image-shape');
+                    shape.innerHTML = `
+                        <div class="image-placeholder">
+                            <div class="image-icon">🖼️</div>
+                            <div style="font-size: 10px;">Image</div>
+                        </div>
+                    `;
+                    break;
+                case 'icon':
+                    shape.classList.add('box-shape');
+                    shape.classList.add('icon-shape');
+                    shape.innerHTML = '⭐';
+                    break;
+                case 'button':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#007bff';
+                    shape.style.color = 'white';
+                    shape.style.border = 'none';
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + height + 'px; font-size: 14px;">Button</div>';
+                    break;
+                case 'text-input':
+                    shape.classList.add('text-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.style.borderRadius = '4px';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'text-input';
+                    input.style.border = 'none';
+                    input.style.background = 'transparent';
+                    input.style.width = '100%';
+                    input.style.height = '100%';
+                    input.style.padding = '8px';
+                    input.placeholder = 'Enter text...';
+                    shape.appendChild(input);
+                    break;
+                case 'block-text':
+                    shape.classList.add('text-shape');
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'text-input';
+                    textarea.value = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...';
+                    textarea.style.fontSize = '14px';
+                    textarea.style.lineHeight = '1.5';
+                    textarea.addEventListener('blur', function() {
+                        if (this.value.trim() === '') {
+                            this.value = 'Lorem ipsum dolor sit amet...';
+                        }
+                    });
+                    textarea.addEventListener('input', function() {
+                        this.style.height = 'auto';
+                        this.style.height = Math.min(this.scrollHeight, parseInt(shape.style.height) - 16) + 'px';
+                    });
+                    shape.appendChild(textarea);
+                    break;
+                case 'block-headline':
+                    shape.classList.add('text-shape');
+                    shape.innerHTML = '<div style="font-size: 24px; font-weight: bold; line-height: ' + height + 'px; text-align: center;">Headline</div>';
+                    break;
+                case 'dropdown':
+                    shape.classList.add('box-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px;"><span>Select option</span><span>▼</span></div>';
+                    break;
+                case 'checkbox':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; display: inline-block;"></span><span>Checkbox</span></div>';
+                    break;
+                case 'radio':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; border-radius: 50%; display: inline-block;"></span><span>Radio Button</span></div>';
+                    break;
+                // Section types with realistic content
+                case 'navbar':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#2c3e50';
+                    shape.style.color = 'white';
+                    shape.style.border = 'none';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 100%;"><div style="font-weight: bold;">Brand</div><div style="display: flex; gap: 20px;"><span>Home</span><span>About</span><span>Contact</span></div></div>';
+                    break;
+                case 'header':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#34495e';
+                    shape.style.color = 'white';
+                    shape.style.textAlign = 'center';
+                    shape.innerHTML = '<div style="padding: 20px;"><h1 style="margin: 0; font-size: 28px;">Page Title</h1><p style="margin: 10px 0 0 0; opacity: 0.8;">Subtitle or description</p></div>';
+                    break;
+                case 'footer':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#2c3e50';
+                    shape.style.color = 'white';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 100%; font-size: 12px;"><div>© 2024 Company Name</div><div style="display: flex; gap: 15px;"><span>Privacy</span><span>Terms</span><span>Contact</span></div></div>';
+                    break;
+                case 'sidebar':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#ecf0f1';
+                    shape.style.border = '1px solid #bdc3c7';
+                    shape.innerHTML = '<div style="padding: 15px;"><h3 style="margin: 0 0 15px 0; font-size: 16px;">Navigation</h3><div style="display: flex; flex-direction: column; gap: 8px;"><div style="padding: 8px; background: #3498db; color: white; border-radius: 3px;">Dashboard</div><div style="padding: 8px; color: #666;">Users</div><div style="padding: 8px; color: #666;">Settings</div><div style="padding: 8px; color: #666;">Reports</div></div></div>';
+                    break;
+                case 'hero-section':
+                    shape.classList.add('box-shape');
+                    shape.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    shape.style.color = 'white';
+                    shape.style.textAlign = 'center';
+                    shape.innerHTML = '<div style="padding: 60px 20px;"><h1 style="margin: 0 0 20px 0; font-size: 36px;">Welcome to Our Product</h1><p style="margin: 0 0 30px 0; font-size: 18px; opacity: 0.9;">Build amazing experiences with our platform</p><button style="background: #fff; color: #667eea; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; cursor: pointer;">Get Started</button></div>';
+                    break;
+                case 'content-section':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 30px;"><h2 style="margin: 0 0 15px 0; font-size: 24px; color: #2c3e50;">Content Section</h2><p style="margin: 0; color: #666; line-height: 1.6;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>';
+                    break;
+                case 'form':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div style="padding: 30px;"><h2 style="margin: 0 0 20px 0; text-align: center;">Contact Form</h2><div style="display: flex; flex-direction: column; gap: 15px;"><input style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Name"><input style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Email"><textarea style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; height: 80px; resize: none;" placeholder="Message"></textarea><button style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer;">Send Message</button></div></div>';
+                    break;
+                case 'modal':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+                    shape.innerHTML = '<div><div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;"><h3 style="margin: 0;">Modal Title</h3><span style="cursor: pointer; color: #999;">✕</span></div><div style="padding: 30px;"><p style="margin: 0 0 20px 0;">This is a modal dialog. You can put any content here.</p><div style="display: flex; gap: 10px; justify-content: flex-end;"><button style="background: #ecf0f1; border: 1px solid #bdc3c7; padding: 8px 16px; border-radius: 4px;">Cancel</button><button style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Confirm</button></div></div></div>';
+                    break;
+                case 'card':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.style.borderRadius = '8px';
+                    shape.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    shape.innerHTML = '<div style="padding: 20px;"><div style="width: 100%; height: 80px; background: #ecf0f1; border-radius: 4px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; color: #666;">Image</div><h3 style="margin: 0 0 10px 0; font-size: 18px;">Card Title</h3><p style="margin: 0; color: #666; font-size: 14px;">Card description text goes here.</p></div>';
+                    break;
+                case 'table':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div style="padding: 20px;"><h3 style="margin: 0 0 15px 0;">Data Table</h3><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #f8f9fa;"><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Name</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Status</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Date</th></tr></thead><tbody><tr><td style="padding: 8px; border: 1px solid #ddd;">John Doe</td><td style="padding: 8px; border: 1px solid #ddd;">Active</td><td style="padding: 8px; border: 1px solid #ddd;">2024-01-15</td></tr><tr><td style="padding: 8px; border: 1px solid #ddd;">Jane Smith</td><td style="padding: 8px; border: 1px solid #ddd;">Pending</td><td style="padding: 8px; border: 1px solid #ddd;">2024-01-16</td></tr></tbody></table></div>';
+                    break;
+                case 'gallery':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 20px;"><h3 style="margin: 0 0 15px 0;">Image Gallery</h3><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;"><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div></div></div>';
+                    break;
+                case 'testimonial':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.style.borderRadius = '8px';
+                    shape.innerHTML = '<div style="padding: 30px; text-align: center;"><div style="font-size: 36px; color: #3498db; margin-bottom: 15px;">"</div><p style="margin: 0 0 20px 0; font-style: italic; color: #666;">"This product has transformed our business. Highly recommend!"</p><div><strong>Sarah Johnson</strong><div style="color: #999; font-size: 14px;">CEO, TechCorp</div></div></div>';
+                    break;
+                case 'breadcrumb':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#f8f9fa';
+                    shape.style.border = '1px solid #e9ecef';
+                    shape.innerHTML = '<div style="padding: 10px 20px; display: flex; align-items: center; gap: 5px; font-size: 14px; color: #666;"><span>Home</span><span>></span><span>Category</span><span>></span><span style="color: #333; font-weight: 500;">Current Page</span></div>';
+                    break;
+                case 'pagination':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 15px; display: flex; justify-content: center; gap: 5px;"><button style="padding: 8px 12px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer;">« Prev</button><button style="padding: 8px 12px; border: 1px solid #3498db; background: #3498db; color: white;">1</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: white;">2</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: white;">3</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer;">Next »</button></div>';
+                    break;
+                case 'tab':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div><div style="display: flex; border-bottom: 1px solid #ddd;"><div style="padding: 12px 20px; background: #3498db; color: white; border-bottom: 2px solid #3498db;">Tab 1</div><div style="padding: 12px 20px; color: #666; cursor: pointer;">Tab 2</div><div style="padding: 12px 20px; color: #666; cursor: pointer;">Tab 3</div></div><div style="padding: 20px;"><p style="margin: 0;">Content for the active tab goes here.</p></div></div>';
+                    break;
+                case 'accordion':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div><div style="border-bottom: 1px solid #eee;"><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 1</span><span>▼</span></div><div style="padding: 15px;">Content for section 1 goes here.</div></div><div style="border-bottom: 1px solid #eee;"><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 2</span><span>▶</span></div></div><div><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 3</span><span>▶</span></div></div></div>';
+                    break;
+                default:
+                    // For all other types, show a generic box with the type name
+                    shape.classList.add('box-shape');
+                    const allElements = [...pageElements.elements, ...pageElements.sections];
+                    const displayName = allElements.find(el => el.type === type)?.name || type;
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + height + 'px; color: #999; font-size: 12px;">' + displayName + '</div>';
+                    break;
+            }
+            
+            // Add event listeners
+            shape.addEventListener('mousedown', startShapeDrag);
+            shape.addEventListener('click', selectShape);
+            shape.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                handleShapeDoubleClick(shape, e);
+            });
+            
+            // For text shapes, add special handling to enable dragging
+            if (type === 'text-input' || type === 'block-text') {
+                const textElement = shape.querySelector('.text-input, input, textarea');
+                if (textElement) {
+                    textElement.addEventListener('mousedown', function(e) {
+                        // If not focused, allow dragging by preventing default and calling shape drag
+                        if (document.activeElement !== textElement) {
+                            e.preventDefault();
+                            startShapeDrag(e);
+                        }
+                    });
+                }
+            }
+            
+            // Special handling for text shapes
+            if (type === 'text-input' || type === 'block-text') {
+                // For text inputs, double-click focuses the input instead of changing type
+                shape.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    const textInput = shape.querySelector('.text-input, input, textarea');
+                    if (textInput) {
+                        textInput.focus();
+                        if (textInput.select) textInput.select();
+                    } else {
+                        handleShapeDoubleClick(shape, e);
+                    }
+                });
+            }
+            
+            console.log('Canvas state before append:', {
+                scrollTop: canvas.scrollTop,
+                scrollLeft: canvas.scrollLeft,
+                offsetHeight: canvas.offsetHeight,
+                childrenCount: canvas.children.length
+            });
+            
+            canvas.appendChild(shape);
+            
+            console.log('Canvas state after append:', {
+                scrollTop: canvas.scrollTop,
+                scrollLeft: canvas.scrollLeft,
+                offsetHeight: canvas.offsetHeight,
+                childrenCount: canvas.children.length
+            });
+            
+            // Check position after adding to canvas
+            setTimeout(() => {
+                const rect = shape.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                console.log('After adding to canvas:');
+                console.log('Shape rect:', rect);
+                console.log('Canvas rect:', canvasRect);
+                console.log('Shape computed position relative to canvas:', {
+                    x: rect.left - canvasRect.left,
+                    y: rect.top - canvasRect.top
+                });
+                console.log('Shape style position:', shape.style.left, shape.style.top);
+            }, 10);
+            
+            selectShape({ target: shape });
+        }
+
+        function selectShape(event) {
+            if (event && event.stopPropagation) {
+                event.stopPropagation();
+            }
+            
+            // Remove selection from all shapes and their resize handles
+            document.querySelectorAll('.shape').forEach(s => {
+                s.classList.remove('selected');
+                removeResizeHandles(s);
+            });
+            
+            // Select this shape
+            const shape = event.target.closest('.shape');
+            if (shape && !shape.classList.contains('drawing-shape')) {
+                shape.classList.add('selected');
+                selectedShape = shape;
+                addResizeHandles(shape);
+                updatePositionInfo();
+            }
+        }
+
+        function startShapeDrag(event) {
+            if (isDrawing || isResizing) return;
+            
+            // Don't start dragging if clicking on a text input or resize handle
+            if (event.target.classList.contains('text-input') || 
+                event.target.classList.contains('resize-handle')) {
+                return;
+            }
+            
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const shape = event.target.closest('.shape');
+            if (!shape || shape.classList.contains('drawing-shape')) return;
+            
+            selectedShape = shape;
+            shape.classList.add('selected');
+            
+            const rect = shape.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Calculate offset relative to shape's position within canvas
+            dragOffset.x = event.clientX - rect.left;
+            dragOffset.y = event.clientY - rect.top;
+            
+            document.addEventListener('mousemove', dragShape);
+            document.addEventListener('mouseup', stopShapeDrag);
+        }
+
+        function dragShape(event) {
+            if (!selectedShape) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            let newX = event.clientX - canvasRect.left - dragOffset.x;
+            let newY = event.clientY - canvasRect.top - dragOffset.y;
+            
+            // Constrain to canvas boundaries
+            newX = Math.max(0, Math.min(newX, canvas.offsetWidth - selectedShape.offsetWidth));
+            newY = Math.max(0, Math.min(newY, canvas.offsetHeight - selectedShape.offsetHeight));
+            
+            selectedShape.style.left = newX + 'px';
+            selectedShape.style.top = newY + 'px';
+            
+            updatePositionInfo();
+        }
+
+        function stopShapeDrag() {
+            document.removeEventListener('mousemove', dragShape);
+            document.removeEventListener('mouseup', stopShapeDrag);
+        }
+
+        function updatePositionInfo() {
+            if (!selectedShape) {
+                document.getElementById('position-info').textContent = 'X: 0 px   Y: 0 px   W: 0 px   H: 0 px';
+                return;
+            }
+            
+            const x = parseInt(selectedShape.style.left) || 0;
+            const y = parseInt(selectedShape.style.top) || 0;
+            const w = selectedShape.offsetWidth;
+            const h = selectedShape.offsetHeight;
+            
+            document.getElementById('position-info').textContent = `X: ${x} px   Y: ${y} px   W: ${w} px   H: ${h} px`;
+        }
+
+        // Click outside to deselect
+        canvas.addEventListener('click', function(event) {
+            if (event.target === canvas && !isDrawing) {
+                document.querySelectorAll('.shape').forEach(s => {
+                    s.classList.remove('selected');
+                    removeResizeHandles(s);
+                });
+                selectedShape = null;
+                updatePositionInfo();
+            }
+        });
+
+        // Delete selected shape with Delete or Backspace key
+        document.addEventListener('keydown', function(event) {
+            if ((event.key === 'Delete' || event.key === 'Backspace') && selectedShape) {
+                removeResizeHandles(selectedShape);
+                selectedShape.remove();
+                selectedShape = null;
+                updatePositionInfo();
+            }
+        });
+        
+        function addResizeHandles(shape) {
+            // Remove any existing handles first
+            removeResizeHandles(shape);
+            
+            const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+            handles.forEach(direction => {
+                const handle = document.createElement('div');
+                handle.className = `resize-handle ${direction}`;
+                handle.addEventListener('mousedown', function(e) {
+                    startResize(e, shape, direction);
+                });
+                shape.appendChild(handle);
+            });
+        }
+        
+        function removeResizeHandles(shape) {
+            const handles = shape.querySelectorAll('.resize-handle');
+            handles.forEach(handle => handle.remove());
+        }
+        
+        function startResize(event, shape, direction) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            isResizing = true;
+            resizeHandle = direction;
+            selectedShape = shape;
+            
+            // Store original bounds
+            const rect = shape.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            originalBounds = {
+                left: parseInt(shape.style.left) || 0,
+                top: parseInt(shape.style.top) || 0,
+                width: shape.offsetWidth,
+                height: shape.offsetHeight,
+                mouseX: event.clientX,
+                mouseY: event.clientY
+            };
+            
+            document.addEventListener('mousemove', handleResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+        
+        function handleResize(event) {
+            if (!isResizing || !selectedShape || !originalBounds) return;
+            
+            const deltaX = event.clientX - originalBounds.mouseX;
+            const deltaY = event.clientY - originalBounds.mouseY;
+            
+            let newLeft = originalBounds.left;
+            let newTop = originalBounds.top;
+            let newWidth = originalBounds.width;
+            let newHeight = originalBounds.height;
+            
+            // Calculate new dimensions based on resize handle direction
+            switch(resizeHandle) {
+                case 'nw':
+                    newLeft = originalBounds.left + deltaX;
+                    newTop = originalBounds.top + deltaY;
+                    newWidth = originalBounds.width - deltaX;
+                    newHeight = originalBounds.height - deltaY;
+                    break;
+                case 'n':
+                    newTop = originalBounds.top + deltaY;
+                    newHeight = originalBounds.height - deltaY;
+                    break;
+                case 'ne':
+                    newTop = originalBounds.top + deltaY;
+                    newWidth = originalBounds.width + deltaX;
+                    newHeight = originalBounds.height - deltaY;
+                    break;
+                case 'e':
+                    newWidth = originalBounds.width + deltaX;
+                    break;
+                case 'se':
+                    newWidth = originalBounds.width + deltaX;
+                    newHeight = originalBounds.height + deltaY;
+                    break;
+                case 's':
+                    newHeight = originalBounds.height + deltaY;
+                    break;
+                case 'sw':
+                    newLeft = originalBounds.left + deltaX;
+                    newWidth = originalBounds.width - deltaX;
+                    newHeight = originalBounds.height + deltaY;
+                    break;
+                case 'w':
+                    newLeft = originalBounds.left + deltaX;
+                    newWidth = originalBounds.width - deltaX;
+                    break;
+            }
+            
+            // Enforce minimum size
+            const minSize = 20;
+            if (newWidth < minSize) {
+                if (resizeHandle.includes('w')) {
+                    newLeft = originalBounds.left + originalBounds.width - minSize;
+                }
+                newWidth = minSize;
+            }
+            if (newHeight < minSize) {
+                if (resizeHandle.includes('n')) {
+                    newTop = originalBounds.top + originalBounds.height - minSize;
+                }
+                newHeight = minSize;
+            }
+            
+            // Constrain to canvas boundaries
+            newLeft = Math.max(0, Math.min(newLeft, canvas.offsetWidth - newWidth));
+            newTop = Math.max(0, Math.min(newTop, canvas.offsetHeight - newHeight));
+            
+            // Apply new dimensions
+            selectedShape.style.left = newLeft + 'px';
+            selectedShape.style.top = newTop + 'px';
+            selectedShape.style.width = newWidth + 'px';
+            selectedShape.style.height = newHeight + 'px';
+            
+            // Update content for text shapes that need to adjust to new size
+            updateShapeContentForResize(selectedShape, newWidth, newHeight);
+            
+            updatePositionInfo();
+        }
+        
+        function updateShapeContentForResize(shape, width, height) {
+            const shapeType = shape.getAttribute('data-type');
+            
+            // Update line-height for centered content
+            if (shapeType === 'button' || shapeType === 'block-headline') {
+                const content = shape.querySelector('div');
+                if (content) {
+                    content.style.lineHeight = height + 'px';
+                    // Ensure text size adjusts if box gets too small
+                    const minFontSize = 10;
+                    const maxFontSize = shapeType === 'button' ? 14 : 24;
+                    const fontSize = Math.max(minFontSize, Math.min(maxFontSize, height * 0.6));
+                    content.style.fontSize = fontSize + 'px';
+                }
+            }
+            
+            // Update textarea height for text shapes
+            if (shapeType === 'block-text') {
+                const textarea = shape.querySelector('textarea');
+                if (textarea) {
+                    const padding = 16; // Account for shape padding
+                    const maxHeight = Math.max(20, height - padding);
+                    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+                    textarea.style.maxHeight = maxHeight + 'px';
+                }
+            }
+            
+            // Update text input height for single-line text inputs
+            if (shapeType === 'text-input') {
+                const input = shape.querySelector('input');
+                if (input) {
+                    const padding = 16; // Account for shape padding
+                    const inputHeight = Math.max(20, height - padding);
+                    input.style.height = inputHeight + 'px';
+                    input.style.lineHeight = inputHeight + 'px';
+                }
+            }
+            
+            // Update other content types that need size adjustments
+            if (shapeType === 'dropdown') {
+                const content = shape.querySelector('div');
+                if (content) {
+                    content.style.height = height + 'px';
+                    content.style.lineHeight = height + 'px';
+                }
+            }
+            
+            if (shapeType === 'checkbox' || shapeType === 'radio') {
+                const content = shape.querySelector('div');
+                if (content) {
+                    content.style.height = height + 'px';
+                    content.style.lineHeight = height + 'px';
+                    // Adjust checkbox/radio size based on container height
+                    const indicator = content.querySelector('span:first-child');
+                    if (indicator) {
+                        const indicatorSize = Math.min(16, height * 0.6);
+                        indicator.style.width = indicatorSize + 'px';
+                        indicator.style.height = indicatorSize + 'px';
+                    }
+                }
+            }
+            
+            // Handle section types with complex layouts
+            if (['navbar', 'header', 'footer', 'sidebar', 'hero-section', 'content-section', 
+                 'form', 'modal', 'card', 'table', 'gallery', 'testimonial', 'breadcrumb', 
+                 'pagination', 'tab', 'accordion'].includes(shapeType)) {
+                updateSectionLayout(shape, shapeType, width, height);
+            }
+            
+            // For generic shapes with text content, adjust font size
+            if (!['image', 'icon'].includes(shapeType)) {
+                const textContent = shape.querySelector('div:not(.image-placeholder)');
+                if (textContent && !textContent.querySelector('input, textarea') && 
+                    !['navbar', 'header', 'footer', 'sidebar', 'hero-section', 'content-section', 
+                      'form', 'modal', 'card', 'table', 'gallery', 'testimonial', 'breadcrumb', 
+                      'pagination', 'tab', 'accordion'].includes(shapeType)) {
+                    const minFontSize = 8;
+                    const maxFontSize = 16;
+                    const fontSize = Math.max(minFontSize, Math.min(maxFontSize, Math.min(width, height) * 0.15));
+                    textContent.style.fontSize = fontSize + 'px';
+                    textContent.style.lineHeight = height + 'px';
+                }
+            }
+        }
+        
+        function updateSectionLayout(shape, shapeType, width, height) {
+            const container = shape.querySelector('div');
+            if (!container) return;
+            
+            // Ensure container takes full size
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.boxSizing = 'border-box';
+            
+            switch(shapeType) {
+                case 'navbar':
+                case 'footer':
+                    // Adjust padding and font size for horizontal layouts
+                    const padding = Math.max(10, Math.min(20, width * 0.02));
+                    container.style.padding = `0 ${padding}px`;
+                    const navFontSize = Math.max(10, Math.min(14, height * 0.3));
+                    container.style.fontSize = navFontSize + 'px';
+                    break;
+                    
+                case 'header':
+                case 'hero-section':
+                    // Responsive padding and text sizing
+                    const headerPadding = Math.max(15, Math.min(60, height * 0.2));
+                    container.style.padding = `${headerPadding}px 20px`;
+                    const h1 = container.querySelector('h1');
+                    if (h1) {
+                        const h1Size = Math.max(18, Math.min(36, Math.min(width * 0.05, height * 0.25)));
+                        h1.style.fontSize = h1Size + 'px';
+                    }
+                    const p = container.querySelector('p');
+                    if (p) {
+                        const pSize = Math.max(12, Math.min(18, Math.min(width * 0.025, height * 0.15)));
+                        p.style.fontSize = pSize + 'px';
+                    }
+                    break;
+                    
+                case 'sidebar':
+                    // Responsive padding for sidebar
+                    const sidebarPadding = Math.max(10, Math.min(15, width * 0.06));
+                    container.style.padding = sidebarPadding + 'px';
+                    const navItems = container.querySelectorAll('div > div');
+                    navItems.forEach(item => {
+                        const itemPadding = Math.max(4, Math.min(8, height * 0.02));
+                        item.style.padding = itemPadding + 'px';
+                    });
+                    break;
+                    
+                case 'content-section':
+                    // Responsive padding and text sizing
+                    const contentPadding = Math.max(15, Math.min(30, Math.min(width * 0.04, height * 0.15)));
+                    container.style.padding = contentPadding + 'px';
+                    const h2 = container.querySelector('h2');
+                    if (h2) {
+                        const h2Size = Math.max(16, Math.min(24, Math.min(width * 0.04, height * 0.2)));
+                        h2.style.fontSize = h2Size + 'px';
+                    }
+                    break;
+                    
+                case 'form':
+                    // Responsive form layout
+                    const formPadding = Math.max(15, Math.min(30, Math.min(width * 0.06, height * 0.1)));
+                    container.style.padding = formPadding + 'px';
+                    const inputs = container.querySelectorAll('input, textarea, button');
+                    inputs.forEach(input => {
+                        const inputPadding = Math.max(6, Math.min(12, height * 0.04));
+                        input.style.padding = inputPadding + 'px';
+                        input.style.fontSize = Math.max(12, Math.min(14, height * 0.05)) + 'px';
+                    });
+                    break;
+                    
+                case 'modal':
+                    // Ensure modal header and content scale properly
+                    const modalHeader = container.querySelector('div:first-child');
+                    const modalContent = container.querySelector('div:last-child');
+                    if (modalHeader && modalContent) {
+                        const headerHeight = Math.max(40, Math.min(60, height * 0.15));
+                        modalHeader.style.minHeight = headerHeight + 'px';
+                        modalContent.style.height = `calc(100% - ${headerHeight}px)`;
+                    }
+                    break;
+                    
+                case 'card':
+                    // Responsive card padding
+                    const cardPadding = Math.max(10, Math.min(20, Math.min(width * 0.067, height * 0.1)));
+                    container.style.padding = cardPadding + 'px';
+                    const imageDiv = container.querySelector('div:first-child');
+                    if (imageDiv) {
+                        const imageHeight = Math.max(40, Math.min(80, height * 0.4));
+                        imageDiv.style.height = imageHeight + 'px';
+                    }
+                    break;
+                    
+                case 'table':
+                    // Responsive table layout
+                    const tablePadding = Math.max(10, Math.min(20, Math.min(width * 0.02, height * 0.08)));
+                    container.style.padding = tablePadding + 'px';
+                    const table = container.querySelector('table');
+                    if (table) {
+                        const cellPadding = Math.max(4, Math.min(8, height * 0.03));
+                        const cells = table.querySelectorAll('th, td');
+                        cells.forEach(cell => {
+                            cell.style.padding = cellPadding + 'px';
+                            cell.style.fontSize = Math.max(10, Math.min(14, height * 0.06)) + 'px';
+                        });
+                    }
+                    break;
+                    
+                case 'gallery':
+                    // Responsive gallery grid
+                    const galleryPadding = Math.max(10, Math.min(20, Math.min(width * 0.04, height * 0.1)));
+                    container.style.padding = galleryPadding + 'px';
+                    const grid = container.querySelector('div:last-child');
+                    if (grid) {
+                        const cols = width < 200 ? 2 : 3;
+                        grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                    }
+                    break;
+                    
+                case 'testimonial':
+                    // Responsive testimonial padding
+                    const testPadding = Math.max(15, Math.min(30, Math.min(width * 0.1, height * 0.15)));
+                    container.style.padding = testPadding + 'px';
+                    const quote = container.querySelector('div:first-child');
+                    if (quote) {
+                        const quoteSize = Math.max(24, Math.min(36, height * 0.2));
+                        quote.style.fontSize = quoteSize + 'px';
+                    }
+                    break;
+                    
+                case 'breadcrumb':
+                case 'pagination':
+                    // Responsive padding for navigation elements
+                    const navPadding = Math.max(8, Math.min(15, height * 0.3));
+                    container.style.padding = `${navPadding}px 20px`;
+                    container.style.fontSize = Math.max(10, Math.min(14, height * 0.4)) + 'px';
+                    break;
+                    
+                case 'tab':
+                    // Responsive tab layout
+                    const tabHeader = container.querySelector('div:first-child');
+                    const tabContent = container.querySelector('div:last-child');
+                    if (tabHeader && tabContent) {
+                        const headerHeight = Math.max(30, Math.min(50, height * 0.3));
+                        tabHeader.style.minHeight = headerHeight + 'px';
+                        tabContent.style.height = `calc(100% - ${headerHeight}px)`;
+                        const tabs = tabHeader.querySelectorAll('div');
+                        tabs.forEach(tab => {
+                            const tabPadding = Math.max(6, Math.min(12, headerHeight * 0.24));
+                            tab.style.padding = `${tabPadding}px 20px`;
+                        });
+                    }
+                    break;
+                    
+                case 'accordion':
+                    // Responsive accordion sections
+                    const accSections = container.querySelectorAll('div > div:first-child');
+                    accSections.forEach(section => {
+                        const sectionPadding = Math.max(8, Math.min(15, height * 0.05));
+                        section.style.padding = sectionPadding + 'px';
+                    });
+                    break;
+            }
+        }
+        
+        function stopResize() {
+            if (isResizing) {
+                isResizing = false;
+                resizeHandle = null;
+                originalBounds = null;
+                
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+
+        // Menu functionality
+        document.getElementById('menu-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('menu-dropdown');
+            dropdown.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+            document.getElementById('menu-dropdown').classList.remove('show');
+        });
+
+        // Save wireframe to JSON file
+        function saveWireframe() {
+            const shapes = [];
+            document.querySelectorAll('.shape:not(.drawing-shape)').forEach(shape => {
+                const shapeData = {
+                    id: shape.id,
+                    type: shape.getAttribute('data-type'),
+                    x: parseInt(shape.style.left) || 0,
+                    y: parseInt(shape.style.top) || 0,
+                    width: shape.offsetWidth,
+                    height: shape.offsetHeight
+                };
+
+                // Add text content for text shapes
+                if (shapeData.type === 'text') {
+                    const textarea = shape.querySelector('.text-input');
+                    shapeData.text = textarea ? textarea.value : '';
+                }
+
+                shapes.push(shapeData);
+            });
+
+            const wireframe = {
+                version: '1.0',
+                created: new Date().toISOString(),
+                canvas: {
+                    width: 1024,
+                    height: canvas.offsetHeight
+                },
+                shapes: shapes
+            };
+
+            // Download as JSON file
+            const blob = new Blob([JSON.stringify(wireframe, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wireframe-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Close menu
+            document.getElementById('menu-dropdown').classList.remove('show');
+        }
+
+        // Load wireframe from JSON file
+        function loadWireframe(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const wireframe = JSON.parse(e.target.result);
+                    
+                    // Clear existing shapes
+                    clearCanvas();
+                    
+                    // Recreate shapes from saved data
+                    wireframe.shapes.forEach(shapeData => {
+                        createShapeFromData(shapeData);
+                    });
+
+                    console.log('Wireframe loaded successfully');
+                } catch (error) {
+                    alert('Error loading wireframe file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Close menu
+            document.getElementById('menu-dropdown').classList.remove('show');
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Create shape from saved data
+        function createShapeFromData(shapeData) {
+            const shape = document.createElement('div');
+            shape.className = 'shape';
+            shape.id = shapeData.id || `shape-${shapeCounter++}`;
+            shape.setAttribute('data-type', shapeData.type);
+            
+            // Force absolute positioning and set position/size
+            shape.style.position = 'absolute';
+            shape.style.left = shapeData.x + 'px';
+            shape.style.top = shapeData.y + 'px';
+            shape.style.width = shapeData.width + 'px';
+            shape.style.height = shapeData.height + 'px';
+            
+            // Use the same shape creation logic as createShape function
+            const type = shapeData.type;
+            const width = shapeData.width;
+            const height = shapeData.height;
+            
+            // Set shape properties based on type (reuse createShape logic)
+            switch(type) {
+                case 'image':
+                    shape.classList.add('image-shape');
+                    shape.innerHTML = `
+                        <div class="image-placeholder">
+                            <div class="image-icon">🖼️</div>
+                            <div style="font-size: 10px;">Image</div>
+                        </div>
+                    `;
+                    break;
+                case 'icon':
+                    shape.classList.add('box-shape');
+                    shape.classList.add('icon-shape');
+                    shape.innerHTML = '⭐';
+                    break;
+                case 'button':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#007bff';
+                    shape.style.color = 'white';
+                    shape.style.border = 'none';
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + height + 'px; font-size: 14px;">Button</div>';
+                    break;
+                case 'text-input':
+                    shape.classList.add('text-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.style.borderRadius = '4px';
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'text-input';
+                    input.style.border = 'none';
+                    input.style.background = 'transparent';
+                    input.style.width = '100%';
+                    input.style.height = '100%';
+                    input.style.padding = '8px';
+                    input.placeholder = 'Enter text...';
+                    shape.appendChild(input);
+                    break;
+                case 'block-text':
+                    shape.classList.add('text-shape');
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'text-input';
+                    textarea.value = shapeData.text || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...';
+                    textarea.style.fontSize = '14px';
+                    textarea.style.lineHeight = '1.5';
+                    textarea.addEventListener('blur', function() {
+                        if (this.value.trim() === '') {
+                            this.value = 'Lorem ipsum dolor sit amet...';
+                        }
+                    });
+                    textarea.addEventListener('input', function() {
+                        this.style.height = 'auto';
+                        this.style.height = Math.min(this.scrollHeight, parseInt(shape.style.height) - 16) + 'px';
+                    });
+                    shape.appendChild(textarea);
+                    break;
+                case 'block-headline':
+                    shape.classList.add('text-shape');
+                    shape.innerHTML = '<div style="font-size: 24px; font-weight: bold; line-height: ' + height + 'px; text-align: center;">Headline</div>';
+                    break;
+                case 'dropdown':
+                    shape.classList.add('box-shape');
+                    shape.style.border = '2px solid #ddd';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px;"><span>Select option</span><span>▼</span></div>';
+                    break;
+                case 'checkbox':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; display: inline-block;"></span><span>Checkbox</span></div>';
+                    break;
+                case 'radio':
+                    shape.classList.add('box-shape');
+                    shape.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; padding: 8px;"><span style="width: 16px; height: 16px; border: 2px solid #999; border-radius: 50%; display: inline-block;"></span><span>Radio Button</span></div>';
+                    break;
+                // Section types with realistic content
+                case 'navbar':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#2c3e50';
+                    shape.style.color = 'white';
+                    shape.style.border = 'none';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 100%;"><div style="font-weight: bold;">Brand</div><div style="display: flex; gap: 20px;"><span>Home</span><span>About</span><span>Contact</span></div></div>';
+                    break;
+                case 'header':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#34495e';
+                    shape.style.color = 'white';
+                    shape.style.textAlign = 'center';
+                    shape.innerHTML = '<div style="padding: 20px;"><h1 style="margin: 0; font-size: 28px;">Page Title</h1><p style="margin: 10px 0 0 0; opacity: 0.8;">Subtitle or description</p></div>';
+                    break;
+                case 'footer':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#2c3e50';
+                    shape.style.color = 'white';
+                    shape.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 100%; font-size: 12px;"><div>© 2024 Company Name</div><div style="display: flex; gap: 15px;"><span>Privacy</span><span>Terms</span><span>Contact</span></div></div>';
+                    break;
+                case 'sidebar':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#ecf0f1';
+                    shape.style.border = '1px solid #bdc3c7';
+                    shape.innerHTML = '<div style="padding: 15px;"><h3 style="margin: 0 0 15px 0; font-size: 16px;">Navigation</h3><div style="display: flex; flex-direction: column; gap: 8px;"><div style="padding: 8px; background: #3498db; color: white; border-radius: 3px;">Dashboard</div><div style="padding: 8px; color: #666;">Users</div><div style="padding: 8px; color: #666;">Settings</div><div style="padding: 8px; color: #666;">Reports</div></div></div>';
+                    break;
+                case 'hero-section':
+                    shape.classList.add('box-shape');
+                    shape.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    shape.style.color = 'white';
+                    shape.style.textAlign = 'center';
+                    shape.innerHTML = '<div style="padding: 60px 20px;"><h1 style="margin: 0 0 20px 0; font-size: 36px;">Welcome to Our Product</h1><p style="margin: 0 0 30px 0; font-size: 18px; opacity: 0.9;">Build amazing experiences with our platform</p><button style="background: #fff; color: #667eea; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; cursor: pointer;">Get Started</button></div>';
+                    break;
+                case 'content-section':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 30px;"><h2 style="margin: 0 0 15px 0; font-size: 24px; color: #2c3e50;">Content Section</h2><p style="margin: 0; color: #666; line-height: 1.6;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>';
+                    break;
+                case 'form':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div style="padding: 30px;"><h2 style="margin: 0 0 20px 0; text-align: center;">Contact Form</h2><div style="display: flex; flex-direction: column; gap: 15px;"><input style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Name"><input style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Email"><textarea style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; height: 80px; resize: none;" placeholder="Message"></textarea><button style="background: #3498db; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer;">Send Message</button></div></div>';
+                    break;
+                case 'modal':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+                    shape.innerHTML = '<div><div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;"><h3 style="margin: 0;">Modal Title</h3><span style="cursor: pointer; color: #999;">✕</span></div><div style="padding: 30px;"><p style="margin: 0 0 20px 0;">This is a modal dialog. You can put any content here.</p><div style="display: flex; gap: 10px; justify-content: flex-end;"><button style="background: #ecf0f1; border: 1px solid #bdc3c7; padding: 8px 16px; border-radius: 4px;">Cancel</button><button style="background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Confirm</button></div></div></div>';
+                    break;
+                case 'card':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.style.borderRadius = '8px';
+                    shape.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    shape.innerHTML = '<div style="padding: 20px;"><div style="width: 100%; height: 80px; background: #ecf0f1; border-radius: 4px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; color: #666;">Image</div><h3 style="margin: 0 0 10px 0; font-size: 18px;">Card Title</h3><p style="margin: 0; color: #666; font-size: 14px;">Card description text goes here.</p></div>';
+                    break;
+                case 'table':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div style="padding: 20px;"><h3 style="margin: 0 0 15px 0;">Data Table</h3><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #f8f9fa;"><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Name</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Status</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Date</th></tr></thead><tbody><tr><td style="padding: 8px; border: 1px solid #ddd;">John Doe</td><td style="padding: 8px; border: 1px solid #ddd;">Active</td><td style="padding: 8px; border: 1px solid #ddd;">2024-01-15</td></tr><tr><td style="padding: 8px; border: 1px solid #ddd;">Jane Smith</td><td style="padding: 8px; border: 1px solid #ddd;">Pending</td><td style="padding: 8px; border: 1px solid #ddd;">2024-01-16</td></tr></tbody></table></div>';
+                    break;
+                case 'gallery':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 20px;"><h3 style="margin: 0 0 15px 0;">Image Gallery</h3><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;"><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div><div style="aspect-ratio: 1; background: #ecf0f1; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666;">🖼️</div></div></div>';
+                    break;
+                case 'testimonial':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.style.borderRadius = '8px';
+                    shape.innerHTML = '<div style="padding: 30px; text-align: center;"><div style="font-size: 36px; color: #3498db; margin-bottom: 15px;">"</div><p style="margin: 0 0 20px 0; font-style: italic; color: #666;">"This product has transformed our business. Highly recommend!"</p><div><strong>Sarah Johnson</strong><div style="color: #999; font-size: 14px;">CEO, TechCorp</div></div></div>';
+                    break;
+                case 'breadcrumb':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#f8f9fa';
+                    shape.style.border = '1px solid #e9ecef';
+                    shape.innerHTML = '<div style="padding: 10px 20px; display: flex; align-items: center; gap: 5px; font-size: 14px; color: #666;"><span>Home</span><span>></span><span>Category</span><span>></span><span style="color: #333; font-weight: 500;">Current Page</span></div>';
+                    break;
+                case 'pagination':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #e1e8ed';
+                    shape.innerHTML = '<div style="padding: 15px; display: flex; justify-content: center; gap: 5px;"><button style="padding: 8px 12px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer;">« Prev</button><button style="padding: 8px 12px; border: 1px solid #3498db; background: #3498db; color: white;">1</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: white;">2</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: white;">3</button><button style="padding: 8px 12px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer;">Next »</button></div>';
+                    break;
+                case 'tab':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div><div style="display: flex; border-bottom: 1px solid #ddd;"><div style="padding: 12px 20px; background: #3498db; color: white; border-bottom: 2px solid #3498db;">Tab 1</div><div style="padding: 12px 20px; color: #666; cursor: pointer;">Tab 2</div><div style="padding: 12px 20px; color: #666; cursor: pointer;">Tab 3</div></div><div style="padding: 20px;"><p style="margin: 0;">Content for the active tab goes here.</p></div></div>';
+                    break;
+                case 'accordion':
+                    shape.classList.add('box-shape');
+                    shape.style.background = '#fff';
+                    shape.style.border = '1px solid #ddd';
+                    shape.innerHTML = '<div><div style="border-bottom: 1px solid #eee;"><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 1</span><span>▼</span></div><div style="padding: 15px;">Content for section 1 goes here.</div></div><div style="border-bottom: 1px solid #eee;"><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 2</span><span>▶</span></div></div><div><div style="padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; cursor: pointer;"><span>Section 3</span><span>▶</span></div></div></div>';
+                    break;
+                default:
+                    // For all other types, show a generic box with the type name
+                    shape.classList.add('box-shape');
+                    const allElements = [...pageElements.elements, ...pageElements.sections];
+                    const displayName = allElements.find(el => el.type === type)?.name || type;
+                    shape.innerHTML = '<div style="text-align: center; line-height: ' + height + 'px; color: #999; font-size: 12px;">' + displayName + '</div>';
+                    break;
+            }
+            
+            // Add event listeners
+            shape.addEventListener('mousedown', startShapeDrag);
+            shape.addEventListener('click', selectShape);
+            shape.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                handleShapeDoubleClick(shape, e);
+            });
+            
+            // Special handling for text shapes
+            if (type === 'text-input' || type === 'block-text') {
+                const textElement = shape.querySelector('.text-input, input, textarea');
+                if (textElement) {
+                    textElement.addEventListener('mousedown', function(e) {
+                        // If not focused, allow dragging by preventing default and calling shape drag
+                        if (document.activeElement !== textElement) {
+                            e.preventDefault();
+                            startShapeDrag(e);
+                        }
+                    });
+                }
+                
+                shape.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    const textInput = shape.querySelector('.text-input, input, textarea');
+                    if (textInput) {
+                        textInput.style.pointerEvents = 'auto';
+                        textInput.focus();
+                        if (textInput.select) textInput.select();
+                    } else {
+                        handleShapeDoubleClick(shape, e);
+                    }
+                });
+            }
+            
+            canvas.appendChild(shape);
+        }
+
+        // Clear all shapes from canvas
+        function clearCanvas() {
+            document.querySelectorAll('.shape:not(.drawing-shape)').forEach(shape => {
+                shape.remove();
+            });
+            selectedShape = null;
+            updatePositionInfo();
+        }
+    </script>
+</body>
+</html>
