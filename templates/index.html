@@ -287,6 +287,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             z-index: 1001;
             padding: 8px 15px;
+            transition: all 0.3s ease;
         }
         
         .type-options {
@@ -1078,7 +1079,7 @@
                     <button class="type-option" data-type="block-text">
                         <span>📝</span> Text
                     </button>
-                    <button class="type-option hamburger-option" onclick="showFullElementPicker(${x}, ${y}, ${width}, ${height}); this.closest('.type-selector-popup').remove();">
+                    <button class="type-option hamburger-option" onclick="expandToFullPicker(this.closest('.type-selector-popup'), ${x}, ${y}, ${width}, ${height});">
                         <span>☰</span>
                     </button>
                 </div>
@@ -1151,15 +1152,17 @@
             document.addEventListener('mousedown', closeSelector, true);
         }
 
-        function showFullElementPicker(x, y, width, height) {
-            // Create comprehensive element picker
-            const picker = document.createElement('div');
-            picker.className = 'element-picker';
-            picker.innerHTML = `
-                <div class="element-search">
+        function expandToFullPicker(selectorElement, x, y, width, height) {
+            // Store original dimensions and position
+            const originalRect = selectorElement.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Create the expanded picker content
+            const expandedContent = `
+                <div class="element-search" style="opacity: 0; transition: opacity 0.3s ease 0.2s; padding: 15px; padding-bottom: 10px;">
                     <input type="text" class="search-input" placeholder="🔍 Search elements and sections..." />
                 </div>
-                <div class="element-list" id="element-list">
+                <div class="element-list" style="opacity: 0; transition: opacity 0.3s ease 0.2s; overflow-y: auto; height: calc(100% - 70px); padding: 0 10px 10px 10px;">
                     <div class="element-category">Elements</div>
                     ${pageElements.elements.map(element => `
                         <button class="element-item" data-type="${element.type}" data-category="elements">
@@ -1178,8 +1181,34 @@
                 </div>
             `;
             
-            document.body.appendChild(picker);
+            // Animate to expanded size
+            selectorElement.style.width = '320px';
+            selectorElement.style.height = '350px';
+            selectorElement.style.padding = '0';
+            selectorElement.style.borderRadius = '8px';
+            selectorElement.style.overflow = 'hidden';
+            selectorElement.style.boxSizing = 'border-box';
             
+            // Replace content after a short delay
+            setTimeout(() => {
+                selectorElement.innerHTML = expandedContent;
+                
+                // Fade in the new content
+                setTimeout(() => {
+                    const searchDiv = selectorElement.querySelector('.element-search');
+                    const listDiv = selectorElement.querySelector('.element-list');
+                    if (searchDiv) searchDiv.style.opacity = '1';
+                    if (listDiv) listDiv.style.opacity = '1';
+                }, 50);
+            }, 150);
+            
+            // Set up the expanded picker functionality
+            setTimeout(() => {
+                setupExpandedPicker(selectorElement, x, y, width, height);
+            }, 200);
+        }
+        
+        function setupExpandedPicker(picker, x, y, width, height) {
             // Get search input and element list
             const searchInput = picker.querySelector('.search-input');
             const elementItems = picker.querySelectorAll('.element-item');
@@ -1246,7 +1275,7 @@
                 }
             });
             
-            // Close on outside click
+            // Close on outside click (replace the old event handlers)
             let ignoreFirstClick = true;
             function closePicker(e) {
                 if (ignoreFirstClick) {
@@ -1275,6 +1304,12 @@
             // Add the event listener for both click and mousedown to catch canvas events
             document.addEventListener('click', closePicker, true);
             document.addEventListener('mousedown', closePicker, true);
+        }
+        
+        function showFullElementPicker(x, y, width, height) {
+            // This function is now deprecated in favor of expandToFullPicker
+            // Keeping it for any legacy calls - this shouldn't be used anymore
+            console.warn('showFullElementPicker is deprecated, use expandToFullPicker instead');
         }
 
         function createShape(type, x, y, width, height) {
