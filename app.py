@@ -44,6 +44,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-secret-key')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Get base path from environment
+BASE_PATH = os.getenv('BASE_PATH', '').rstrip('/')
+
 # Store active users and their data
 active_users = {}
 rooms = {}
@@ -58,17 +61,17 @@ def generate_user_color():
     colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F']
     return random.choice(colors)
 
-@app.route('/')
+@app.route(f'{BASE_PATH}/')
 def index():
     # Generate a new room ID and redirect to it
     room_id = generate_room_id()
     return redirect(url_for('room', room_id=room_id))
 
-@app.route('/room/<room_id>')
+@app.route(f'{BASE_PATH}/room/<room_id>')
 def room(room_id):
     # Check if this room exists or is new
     is_new = room_id not in rooms
-    return render_template('index.html', room_id=room_id, is_new_room=is_new)
+    return render_template('index.html', room_id=room_id, is_new_room=is_new, base_path=BASE_PATH)
 
 @socketio.on('connect')
 def on_connect():

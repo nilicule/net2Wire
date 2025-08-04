@@ -74,9 +74,11 @@
         // Make room configuration globally available
         window.ROOM_ID = '{{ room_id }}';
         window.IS_NEW_ROOM = {{ 'true' if is_new_room else 'false' }};
+        window.BASE_PATH = '{{ base_path }}';
         console.log('Room configuration:', { 
             ROOM_ID: window.ROOM_ID, 
-            IS_NEW_ROOM: window.IS_NEW_ROOM, 
+            IS_NEW_ROOM: window.IS_NEW_ROOM,
+            BASE_PATH: window.BASE_PATH,
             currentPath: window.location.pathname 
         });
     </script>

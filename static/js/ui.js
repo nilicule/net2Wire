@@ -5,7 +5,8 @@ export function initializeUI(ROOM_ID) {
     // Share functionality
     document.getElementById('share-btn').addEventListener('click', function(e) {
         e.stopPropagation();
-        const shareUrl = `${window.location.origin}/room/${ROOM_ID}`;
+        const basePath = window.BASE_PATH || '';
+        const shareUrl = `${window.location.origin}${basePath}/room/${ROOM_ID}`;
         
         // Try to use the Clipboard API
         if (navigator.clipboard && window.isSecureContext) {
