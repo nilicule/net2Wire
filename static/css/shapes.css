@@ -1,0 +1,94 @@
+/* ===== SHAPES STYLES ===== */
+/* Shape styling, visual elements, borders, and backgrounds */
+
+/* Base shape styles */
+.shape {
+    position: absolute !important;
+    cursor: move;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+/* Selected shape highlighting */
+.shape.selected {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+/* Box shape styling */
+.box-shape {
+    border: 2px solid #999;
+    background: #f9f9f9;
+}
+
+/* Image shape styling */
+.image-shape {
+    border: 2px dashed #999;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Image placeholder content */
+.image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #999;
+}
+
+.image-icon {
+    font-size: 24px;
+    opacity: 0.7;
+}
+
+/* Text shape styling */
+.text-shape {
+    border: 1px solid #ddd;
+    background: white;
+    padding: 8px;
+    color: #333;
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    cursor: move;
+    overflow: hidden;
+}
+
+/* Text input within text shapes */
+.text-input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    height: 100%;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    padding: 0;
+    margin: 0;
+    pointer-events: none;
+    cursor: inherit;
+}
+
+.text-input:focus {
+    pointer-events: auto;
+    cursor: text;
+}
+
+/* Icon shape styling */
+.icon-shape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #666;
+}

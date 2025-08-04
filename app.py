@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from dotenv import load_dotenv
 import os
@@ -60,13 +60,15 @@ def generate_user_color():
 
 @app.route('/')
 def index():
-    # Generate a new room ID for the home page using UUID7 (time-ordered) or UUID4 fallback
+    # Generate a new room ID and redirect to it
     room_id = generate_room_id()
-    return render_template('index.html', room_id=room_id, is_new_room=True)
+    return redirect(url_for('room', room_id=room_id))
 
 @app.route('/room/<room_id>')
 def room(room_id):
-    return render_template('index.html', room_id=room_id, is_new_room=False)
+    # Check if this room exists or is new
+    is_new = room_id not in rooms
+    return render_template('index.html', room_id=room_id, is_new_room=is_new)
 
 @socketio.on('connect')
 def on_connect():
@@ -185,9 +187,13 @@ def on_mouse_move(data):
 
 @socketio.on('shape_created')
 def on_shape_created(data):
+    print(f'Received shape_created from {request.sid}: {data}')
+    
     if request.sid in active_users:
         user_data = active_users[request.sid]
         room_id = user_data.get('room_id')
+        
+        print(f'User {request.sid} in room {room_id}')
         
         if room_id and room_id in rooms:
             # Add shape to room
@@ -198,14 +204,22 @@ def on_shape_created(data):
                 'y': data.get('y'),
                 'width': data.get('width'),
                 'height': data.get('height'),
+                'content': data.get('content'),
                 'created_by': request.sid,
                 'created_at': time.time()
             }
             
             rooms[room_id]['shapes'].append(shape_data)
+            print(f'Added shape to room {room_id}. Room now has {len(rooms[room_id]["shapes"])} shapes')
+            print(f'Broadcasting to {len(rooms[room_id]["users"])} users in room')
             
             # Broadcast to other users
             emit('shape_created', shape_data, room=room_id, include_self=False)
+            print(f'Broadcasted shape_created: {shape_data}')
+        else:
+            print(f'Room {room_id} not found or user not in active users')
+    else:
+        print(f'User {request.sid} not in active_users')
 
 @socketio.on('shape_updated')
 def on_shape_updated(data):
@@ -224,6 +238,7 @@ def on_shape_updated(data):
                         'width': data.get('width', shape['width']),
                         'height': data.get('height', shape['height']),
                         'type': data.get('type', shape['type']),
+                        'content': data.get('content', shape.get('content')),
                         'updated_by': request.sid,
                         'updated_at': time.time()
                     })
@@ -249,6 +264,21 @@ def on_shape_deleted(data):
             emit('shape_deleted', {
                 'id': data.get('id'),
                 'deleted_by': request.sid
+            }, room=room_id, include_self=False)
+
+@socketio.on('canvas_cleared')
+def on_canvas_cleared(data):
+    if request.sid in active_users:
+        user_data = active_users[request.sid]
+        room_id = user_data.get('room_id')
+        
+        if room_id and room_id in rooms:
+            # Clear all shapes from room
+            rooms[room_id]['shapes'] = []
+            
+            # Broadcast to other users
+            emit('canvas_cleared', {
+                'cleared_by': request.sid
             }, room=room_id, include_self=False)
 
 if __name__ == '__main__':
