@@ -474,28 +474,40 @@
         }
         
         .users-list {
-            position: absolute;
-            top: 50px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
             color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            min-width: 150px;
-            z-index: 1000;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            margin-left: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .users-list:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .users-header {
+            font-weight: 600;
+            margin-bottom: 3px;
+            font-size: 10px;
+            opacity: 0.9;
         }
         
         .user-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 2px 0;
+            gap: 6px;
+            padding: 1px 0;
+            font-size: 10px;
         }
         
         .user-color-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
         }
@@ -567,6 +579,11 @@
     <div class="header">
         <div class="header-left">
             <span class="logo">NET2WIRE</span>
+            <!-- Online users list -->
+            <div class="users-list" id="users-list" style="display: none;">
+                <div class="users-header">👥 Online (<span id="user-count">0</span>)</div>
+                <div id="users-container"></div>
+            </div>
         </div>
         <div class="header-right" style="position: relative;">
             <button class="share-btn" id="share-btn">🔗 Share</button>
@@ -591,12 +608,6 @@
         </div>
         <div class="canvas" id="canvas"></div>
         <div class="position-info" id="position-info">X: 0 px &nbsp;&nbsp; Y: 0 px &nbsp;&nbsp; W: 0 px &nbsp;&nbsp; H: 0 px</div>
-        
-        <!-- Collaborative users list -->
-        <div class="users-list" id="users-list" style="display: none;">
-            <div style="font-weight: bold; margin-bottom: 5px;">Online Users</div>
-            <div id="users-container"></div>
-        </div>
     </div>
 
     <script>
@@ -2770,10 +2781,12 @@
         function updateUsersDisplay() {
             const usersContainer = document.getElementById('users-container');
             const usersList = document.getElementById('users-list');
+            const userCount = document.getElementById('user-count');
             
             if (!usersContainer) return;
 
             usersContainer.innerHTML = '';
+            let totalUsers = 0;
             
             if (currentUser) {
                 const userItem = document.createElement('div');
@@ -2783,6 +2796,7 @@
                     <span>${currentUser.user_id} (You)</span>
                 `;
                 usersContainer.appendChild(userItem);
+                totalUsers++;
             }
 
             connectedUsers.forEach(user => {
@@ -2793,10 +2807,16 @@
                     <span>${user.user_id}</span>
                 `;
                 usersContainer.appendChild(userItem);
+                totalUsers++;
             });
 
+            // Update user count
+            if (userCount) {
+                userCount.textContent = totalUsers;
+            }
+
             // Show/hide users list
-            if (connectedUsers.size > 0 || currentUser) {
+            if (totalUsers > 0) {
                 usersList.style.display = 'block';
             } else {
                 usersList.style.display = 'none';

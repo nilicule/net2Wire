@@ -252,4 +252,5 @@ def on_shape_deleted(data):
             }, room=room_id, include_self=False)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5002, allow_unsafe_werkzeug=True)
+    port = int(os.getenv('PORT', 5000))  # Default to 5000 if PORT not set
+    socketio.run(app, debug=True, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
