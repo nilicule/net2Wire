@@ -65,7 +65,9 @@ def generate_user_color():
 def index():
     # Generate a new room ID and redirect to it
     room_id = generate_room_id()
-    return redirect(url_for('room', room_id=room_id))
+    # Include BASE_PATH in the redirect URL
+    redirect_url = f"{BASE_PATH}/room/{room_id}" if BASE_PATH else f"/room/{room_id}"
+    return redirect(redirect_url)
 
 @app.route('/room/<room_id>')
 def room(room_id):
