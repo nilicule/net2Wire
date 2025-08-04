@@ -7,7 +7,11 @@ let lastMousePosition = { x: 0, y: 0 };
 
 // Initialize Socket.IO connection
 export function initializeCollaboration(ROOM_ID, IS_NEW_ROOM) {
-    socket = io();
+    const basePath = window.BASE_PATH || '';
+    const socketPath = basePath ? `${basePath}/socket.io/` : '/socket.io/';
+    socket = io({
+        path: socketPath
+    });
 
     // Connection events
     socket.on('connect', function() {
