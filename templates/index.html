@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NET2WIRE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <style>
         * {
             margin: 0;
@@ -53,6 +54,21 @@
             border-radius: 3px;
             font-size: 12px;
             cursor: pointer;
+        }
+        
+        .share-btn {
+            background: #007bff;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .share-btn:hover {
+            background: #0056b3;
         }
         
         .menu-btn {
@@ -435,6 +451,55 @@
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
         }
         
+        /* Collaborative editing styles */
+        .user-cursor {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10000;
+            font-size: 16px;
+            transition: all 0.1s ease;
+        }
+        
+        .user-label {
+            position: absolute;
+            left: 20px;
+            top: -5px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            white-space: nowrap;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .users-list {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            min-width: 150px;
+            z-index: 1000;
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 2px 0;
+        }
+        
+        .user-color-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
         .resize-handle {
             position: absolute;
             background: #007bff;
@@ -504,6 +569,7 @@
             <span class="logo">NET2WIRE</span>
         </div>
         <div class="header-right" style="position: relative;">
+            <button class="share-btn" id="share-btn">🔗 Share</button>
             <button class="menu-btn" id="menu-btn">☰</button>
             <div class="menu-dropdown" id="menu-dropdown">
                 <button class="menu-item" onclick="saveWireframe()">💾 Save</button>
@@ -525,9 +591,19 @@
         </div>
         <div class="canvas" id="canvas"></div>
         <div class="position-info" id="position-info">X: 0 px &nbsp;&nbsp; Y: 0 px &nbsp;&nbsp; W: 0 px &nbsp;&nbsp; H: 0 px</div>
+        
+        <!-- Collaborative users list -->
+        <div class="users-list" id="users-list" style="display: none;">
+            <div style="font-weight: bold; margin-bottom: 5px;">Online Users</div>
+            <div id="users-container"></div>
+        </div>
     </div>
 
     <script>
+        // Room configuration
+        const ROOM_ID = '{{ room_id }}';
+        const IS_NEW_ROOM = {{ 'true' if is_new_room else 'false' }};
+        
         let shapeCounter = 0;
         let selectedShape = null;
         let isDrawing = false;
@@ -1074,6 +1150,9 @@
                     }
                 });
             }
+            
+            // Emit shape type change to other users
+            emitShapeUpdated(shape);
         }
 
         function showShapeTypeSelector(x, y, width, height) {
@@ -1615,6 +1694,9 @@
             }, 10);
             
             selectShape({ target: shape });
+            
+            // Emit shape creation to other users
+            emitShapeCreated(shape, type, x, y, width, height);
         }
 
         function selectShape(event) {
@@ -1687,6 +1769,11 @@
         function stopShapeDrag() {
             document.removeEventListener('mousemove', dragShape);
             document.removeEventListener('mouseup', stopShapeDrag);
+            
+            // Emit shape update to other users after drag
+            if (selectedShape) {
+                emitShapeUpdated(selectedShape);
+            }
         }
 
         function updatePositionInfo() {
@@ -1718,6 +1805,9 @@
         // Delete selected shape with Delete or Backspace key
         document.addEventListener('keydown', function(event) {
             if ((event.key === 'Delete' || event.key === 'Backspace') && selectedShape) {
+                // Emit deletion to other users before removing
+                emitShapeDeleted(selectedShape);
+                
                 removeResizeHandles(selectedShape);
                 selectedShape.remove();
                 selectedShape = null;
@@ -2107,7 +2197,98 @@
                 
                 document.removeEventListener('mousemove', handleResize);
                 document.removeEventListener('mouseup', stopResize);
+                
+                // Emit shape update to other users after resize
+                if (selectedShape) {
+                    emitShapeUpdated(selectedShape);
+                }
             }
+        }
+
+        // Share functionality
+        document.getElementById('share-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const shareUrl = `${window.location.origin}/room/${ROOM_ID}`;
+            
+            // Try to use the Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showShareNotification('Share link copied to clipboard!');
+                }).catch(() => {
+                    fallbackCopyToClipboard(shareUrl);
+                });
+            } else {
+                fallbackCopyToClipboard(shareUrl);
+            }
+        });
+        
+        // Fallback copy method for older browsers
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showShareNotification('Share link copied to clipboard!');
+            } catch (err) {
+                showShareNotification(`Share URL: ${text}`, 5000);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // Show share notification
+        function showShareNotification(message, duration = 3000) {
+            // Remove any existing notification
+            const existing = document.querySelector('.share-notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = 'share-notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                font-size: 14px;
+                z-index: 10000;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+            `;
+            
+            // Add animation keyframes
+            if (!document.querySelector('#share-notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'share-notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Remove after duration
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
         }
 
         // Menu functionality
@@ -2451,6 +2632,262 @@
             selectedShape = null;
             updatePositionInfo();
         }
+
+        // ========== COLLABORATIVE EDITING ==========
+        let socket = null;
+        let currentUser = null;
+        let connectedUsers = new Map();
+        let lastMousePosition = { x: 0, y: 0 };
+
+        // Initialize Socket.IO connection
+        function initializeCollaboration() {
+            socket = io();
+
+            // Connection events
+            socket.on('connect', function() {
+                console.log('Connected to collaboration server');
+                // Join the room after connecting
+                socket.emit('join_room', { room_id: ROOM_ID });
+                
+                // Update URL if this is a new room
+                if (IS_NEW_ROOM && window.location.pathname === '/') {
+                    window.history.replaceState({}, '', `/room/${ROOM_ID}`);
+                }
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from collaboration server');
+            });
+
+            // User events
+            socket.on('user_info', function(data) {
+                currentUser = data;
+                console.log('Current user:', currentUser);
+                updateUsersDisplay();
+            });
+
+            socket.on('user_joined', function(data) {
+                console.log('User joined:', data);
+                connectedUsers.set(data.session_id, data);
+                createUserCursor(data);
+                updateUsersDisplay();
+            });
+
+            socket.on('user_left', function(data) {
+                console.log('User left:', data);
+                connectedUsers.delete(data.session_id);
+                removeUserCursor(data.session_id);
+                updateUsersDisplay();
+            });
+
+            socket.on('current_users', function(data) {
+                console.log('Current users:', data);
+                data.users.forEach(user => {
+                    connectedUsers.set(user.session_id, user);
+                    createUserCursor(user);
+                });
+                updateUsersDisplay();
+            });
+
+            // Mouse tracking events
+            socket.on('user_mouse_move', function(data) {
+                updateUserCursor(data.session_id, data.x, data.y);
+            });
+
+            // Shape collaboration events
+            socket.on('shape_created', function(data) {
+                createShapeFromCollaboration(data);
+            });
+
+            socket.on('shape_updated', function(data) {
+                updateShapeFromCollaboration(data);
+            });
+
+            socket.on('shape_deleted', function(data) {
+                deleteShapeFromCollaboration(data);
+            });
+
+            socket.on('load_shapes', function(data) {
+                loadShapesFromCollaboration(data.shapes);
+            });
+        }
+
+        // Mouse tracking
+        function startMouseTracking() {
+            document.addEventListener('mousemove', function(e) {
+                const canvasRect = canvas.getBoundingClientRect();
+                const x = e.clientX - canvasRect.left;
+                const y = e.clientY - canvasRect.top;
+                
+                // Only send if position changed significantly (throttle)
+                if (Math.abs(x - lastMousePosition.x) > 5 || Math.abs(y - lastMousePosition.y) > 5) {
+                    lastMousePosition = { x, y };
+                    if (socket) {
+                        socket.emit('mouse_move', { x, y });
+                    }
+                }
+            });
+        }
+
+        // User cursor management
+        function createUserCursor(user) {
+            const existingCursor = document.getElementById(`cursor-${user.session_id}`);
+            if (existingCursor) return;
+
+            const cursor = document.createElement('div');
+            cursor.id = `cursor-${user.session_id}`;
+            cursor.className = 'user-cursor';
+            cursor.style.color = user.color;
+            cursor.innerHTML = `
+                ↖
+                <div class="user-label" style="background: ${user.color}; color: white;">
+                    ${user.user_id}
+                </div>
+            `;
+            cursor.style.left = `${user.mouse_x || 0}px`;
+            cursor.style.top = `${user.mouse_y || 0}px`;
+            
+            document.body.appendChild(cursor);
+        }
+
+        function updateUserCursor(sessionId, x, y) {
+            const cursor = document.getElementById(`cursor-${sessionId}`);
+            if (cursor) {
+                const canvasRect = canvas.getBoundingClientRect();
+                cursor.style.left = `${canvasRect.left + x}px`;
+                cursor.style.top = `${canvasRect.top + y}px`;
+            }
+        }
+
+        function removeUserCursor(sessionId) {
+            const cursor = document.getElementById(`cursor-${sessionId}`);
+            if (cursor) {
+                cursor.remove();
+            }
+        }
+
+        // Users display
+        function updateUsersDisplay() {
+            const usersContainer = document.getElementById('users-container');
+            const usersList = document.getElementById('users-list');
+            
+            if (!usersContainer) return;
+
+            usersContainer.innerHTML = '';
+            
+            if (currentUser) {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <div class="user-color-dot" style="background: ${currentUser.color};"></div>
+                    <span>${currentUser.user_id} (You)</span>
+                `;
+                usersContainer.appendChild(userItem);
+            }
+
+            connectedUsers.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <div class="user-color-dot" style="background: ${user.color};"></div>
+                    <span>${user.user_id}</span>
+                `;
+                usersContainer.appendChild(userItem);
+            });
+
+            // Show/hide users list
+            if (connectedUsers.size > 0 || currentUser) {
+                usersList.style.display = 'block';
+            } else {
+                usersList.style.display = 'none';
+            }
+        }
+
+        // Shape collaboration
+        function createShapeFromCollaboration(data) {
+            // Don't create if shape already exists
+            if (document.getElementById(data.id)) return;
+            
+            // Use existing createShape function but modify to not emit events
+            const tempEmitFlag = window.skipEmit;
+            window.skipEmit = true;
+            createShape(data.type, data.x, data.y, data.width, data.height);
+            
+            // Update the shape ID to match collaboration data
+            const shapes = document.querySelectorAll('.shape:not(.drawing-shape)');
+            const lastShape = shapes[shapes.length - 1];
+            if (lastShape) {
+                lastShape.id = data.id;
+            }
+            
+            window.skipEmit = tempEmitFlag;
+        }
+
+        function updateShapeFromCollaboration(data) {
+            const shape = document.getElementById(data.id);
+            if (shape && shape !== selectedShape) { // Don't update if user is currently editing
+                shape.style.left = data.x + 'px';
+                shape.style.top = data.y + 'px';
+                shape.style.width = data.width + 'px';
+                shape.style.height = data.height + 'px';
+            }
+        }
+
+        function deleteShapeFromCollaboration(data) {
+            const shape = document.getElementById(data.id);
+            if (shape) {
+                shape.remove();
+            }
+        }
+
+        function loadShapesFromCollaboration(shapes) {
+            // Clear existing shapes and load from server
+            clearCanvas();
+            shapes.forEach(shapeData => {
+                createShapeFromCollaboration(shapeData);
+            });
+        }
+
+        // Emit shape events
+        function emitShapeCreated(shape) {
+            if (socket && !window.skipEmit) {
+                socket.emit('shape_created', {
+                    id: shape.id,
+                    type: shape.getAttribute('data-type'),
+                    x: parseInt(shape.style.left) || 0,
+                    y: parseInt(shape.style.top) || 0,
+                    width: shape.offsetWidth,
+                    height: shape.offsetHeight
+                });
+            }
+        }
+
+        function emitShapeUpdated(shape) {
+            if (socket && !window.skipEmit) {
+                socket.emit('shape_updated', {
+                    id: shape.id,
+                    type: shape.getAttribute('data-type'),
+                    x: parseInt(shape.style.left) || 0,
+                    y: parseInt(shape.style.top) || 0,
+                    width: shape.offsetWidth,
+                    height: shape.offsetHeight
+                });
+            }
+        }
+
+        function emitShapeDeleted(shapeId) {
+            if (socket && !window.skipEmit) {
+                socket.emit('shape_deleted', {
+                    id: shapeId
+                });
+            }
+        }
+
+        // Initialize collaboration when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCollaboration();
+            startMouseTracking();
+        });
     </script>
 </body>
 </html>
